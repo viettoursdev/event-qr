@@ -1,0 +1,8 @@
+node_modules/
+
+# ⚠️ KHÔNG commit dữ liệu khách & file riêng tư lên GitHub
+data/*.xlsx
+data/*.xls
+private/
+
+.DS_Store

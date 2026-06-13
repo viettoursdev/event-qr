@@ -1,0 +1,17 @@
+{
+  "name": "event-qr",
+  "version": "1.0.0",
+  "description": "Sinh 500 QR code cho khách dự sự kiện, mỗi QR dẫn tới trang web thông tin bàn tiệc cá nhân hóa.",
+  "type": "module",
+  "scripts": {
+    "import": "node scripts/import.mjs",
+    "qr": "node scripts/qrcodes.mjs",
+    "build": "npm run import && npm run qr",
+    "preview": "node scripts/preview.mjs"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5",
+    "xlsx": "^0.18.5"
+  }
+}
