@@ -1,12 +1,15 @@
 :root {
-  --accent: #c8a96a;
-  --accent-d: #9a7b3f;
-  --ok: #16a34a;
-  --ok-bg: #ecfdf3;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --bg: #f1f5f9;
+  --teal: #0c7c80;
+  --teal-dark: #095e61;
+  --teal-deep: #07484b;
+  --teal-bright: #14a3a8;
+  --teal-tint: #e9f6f6;
+  --ok: #0f9d6e;
+  --ok-bg: #e9f9f1;
+  --ink: #143b3d;
+  --muted: #5b7374;
+  --line: #dbe7e7;
+  --bg: #f4f8f8;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
@@ -17,17 +20,23 @@ body {
   color: var(--ink);
 }
 
-/* ---------- Đăng nhập ---------- */
+/* ---------- Logo ---------- */
+.brandmark { text-align: center; margin-bottom: 22px; }
+.brandmark img { height: 72px; width: auto; filter: drop-shadow(0 6px 18px rgba(0,0,0,.25)); }
+.brandmark-text { font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
+.brandmark-text small { display: block; font-size: 12px; font-weight: 500; letter-spacing: 2px; opacity: .9; margin-top: 4px; }
+
+/* ---------- Đăng nhập (Homepage) ---------- */
 .login {
   min-height: 100dvh;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  background: radial-gradient(1000px 500px at 50% -10%, #1e293b, #0f172a);
+  background: radial-gradient(1000px 520px at 50% -10%, var(--teal), var(--teal-deep));
 }
+.login-inner { width: 100%; max-width: 380px; }
 .login-card {
-  width: 100%; max-width: 380px;
   background: #fff; border-radius: 18px; padding: 30px 26px;
-  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
 }
 .brand { font-size: 20px; font-weight: 800; color: var(--ink); }
 .login-sub { color: var(--muted); font-size: 14px; margin: 4px 0 22px; }
@@ -37,10 +46,10 @@ body {
   width: 100%; padding: 13px 14px; font-size: 16px;
   border: 1px solid var(--line); border-radius: 11px; outline: none;
 }
-.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,169,106,.2); }
+.field input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(12,124,128,.16); }
 .btn-primary {
   width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
-  color: #1a1206; background: linear-gradient(180deg,#d9bd86,#c8a96a);
+  color: #fff; background: linear-gradient(180deg, var(--teal-bright), var(--teal));
   border: none; border-radius: 11px; cursor: pointer;
 }
 .btn-primary:disabled { opacity: .6; cursor: default; }
@@ -51,22 +60,25 @@ body {
 .app { min-height: 100dvh; display: flex; flex-direction: column; }
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 16px; background: #0f172a; color: #fff; position: sticky; top: 0; z-index: 5;
+  padding: 10px 16px; background: var(--teal-deep); color: #fff; position: sticky; top: 0; z-index: 5;
 }
-.event { font-size: 14px; font-weight: 700; color: var(--accent); }
-.counter { font-size: 13px; color: #cbd5e1; margin-top: 2px; }
+.topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.topbar-logo { height: 34px; width: auto; flex-shrink: 0; }
+.event { font-size: 14px; font-weight: 700; color: #fff; }
+.counter { font-size: 13px; color: #b6dcdc; margin-top: 2px; }
 .counter b { color: #fff; font-size: 15px; }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
-.station-tag { font-size: 12.5px; color: #cbd5e1; white-space: nowrap; }
-.btn-ghost { background: transparent; color: #cbd5e1; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.station-tag { font-size: 12.5px; color: #b6dcdc; white-space: nowrap; }
+.btn-ghost { background: transparent; color: #d6ecec; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.btn-ghost:hover { background: rgba(255,255,255,.08); }
 
-.search-wrap { position: sticky; top: 56px; z-index: 4; background: var(--bg); padding: 14px 16px 8px; }
+.search-wrap { position: sticky; top: 54px; z-index: 4; background: var(--bg); padding: 14px 16px 8px; }
 .search-wrap input {
   width: 100%; padding: 15px 42px 15px 16px; font-size: 17px;
   border: 2px solid var(--line); border-radius: 13px; outline: none; background: #fff;
 }
-.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,169,106,.18); }
-.clear { position: absolute; right: 26px; top: 50%; transform: translateY(-30%); border: none; background: #e2e8f0; color: #475569; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; }
+.search-wrap input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(12,124,128,.15); }
+.clear { position: absolute; right: 26px; top: 50%; transform: translateY(-30%); border: none; background: #d7e7e7; color: #2c5557; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; }
 
 .results { flex: 1; padding: 6px 16px 90px; max-width: 720px; width: 100%; margin: 0 auto; }
 .hint { color: var(--muted); text-align: center; padding: 40px 10px; font-size: 15px; }
@@ -77,11 +89,12 @@ body {
   background: #fff; border: 1px solid var(--line); border-radius: 14px;
   padding: 14px 14px 14px 16px; margin-bottom: 10px;
 }
-.card.done { background: var(--ok-bg); border-color: #bbf7d0; }
+.card.done { background: var(--ok-bg); border-color: #b9ecd6; }
 .card-main { flex: 1; min-width: 0; }
 .name { font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
-.meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; color: #475569; margin-top: 6px; }
+.meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; color: #3f6062; margin-top: 6px; }
+.meta b { color: var(--teal-dark); }
 .ci-info { font-size: 12.5px; color: var(--ok); margin-top: 5px; font-weight: 600; }
 .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .badge.ok { background: var(--ok); color: #fff; }
@@ -98,5 +111,5 @@ body {
   padding: 12px 20px; border-radius: 12px; font-size: 15px; font-weight: 600;
   color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.25); z-index: 10; max-width: 90vw; text-align: center;
 }
-.statusbar.ok { background: #0f172a; }
+.statusbar.ok { background: var(--teal-deep); }
 .statusbar.err { background: #dc2626; }

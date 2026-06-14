@@ -9,9 +9,17 @@
   <body>
     <!-- Màn hình đăng nhập -->
     <section id="login" class="login">
-      <div class="login-card">
-        <div class="brand" id="brandName">Check-in khách mời</div>
-        <div class="login-sub">Dành cho nhân viên đón khách</div>
+      <div class="login-inner">
+        <div class="brandmark">
+          <img src="../assets/logo-white.png" alt="Viettours"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+          <div class="brandmark-text" style="display:none">
+            Viettours<small>Incentives &amp; Events</small>
+          </div>
+        </div>
+        <div class="login-card">
+          <div class="brand" id="brandName">Check-in khách mời</div>
+          <div class="login-sub">Dành cho nhân viên đón khách</div>
         <label class="field">
           <span>Tên quầy / máy</span>
           <input id="station" type="text" placeholder="VD: Quầy A, Cổng chính…" autocomplete="off" />
@@ -23,6 +31,7 @@
         <button id="loginBtn" class="btn-primary">Vào ca trực</button>
         <div id="loginError" class="error"></div>
         <div id="demoNote" class="demo-note" hidden>● CHẾ ĐỘ DEMO — dữ liệu mẫu, không lưu thật</div>
+        </div>
       </div>
     </section>
 
@@ -30,8 +39,12 @@
     <section id="app" class="app" hidden>
       <header class="topbar">
         <div class="topbar-left">
-          <div class="event" id="eventName"></div>
-          <div class="counter"><b id="countDone">0</b><span>/<span id="countTotal">0</span> đã check-in</span></div>
+          <img class="topbar-logo" src="../assets/logo-white.png" alt="Viettours"
+            onerror="this.style.display='none'" />
+          <div>
+            <div class="event" id="eventName"></div>
+            <div class="counter"><b id="countDone">0</b><span>/<span id="countTotal">0</span> đã check-in</span></div>
+          </div>
         </div>
         <div class="topbar-right">
           <span class="station-tag">🖥 <span id="stationTag"></span></span>

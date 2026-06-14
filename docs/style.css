@@ -1,39 +1,66 @@
 :root {
-  --bg-1: #0f172a;
-  --bg-2: #1e293b;
-  --accent: #c8a96a; /* vàng gold sang trọng */
-  --text: #1f2937;
-  --muted: #6b7280;
+  --teal: #0c7c80;
+  --teal-dark: #095e61;
+  --teal-deep: #07484b;
+  --teal-bright: #14a3a8;
+  --teal-tint: #e9f6f6;
+  --teal-line: #cfe8e8;
+  --text: #143b3d;
+  --muted: #5b7374;
   --card-bg: #ffffff;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html, body {
-  margin: 0;
-  min-height: 100%;
-}
+html, body { margin: 0; min-height: 100%; }
 
 body {
   font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background: radial-gradient(1200px 600px at 50% -10%, var(--bg-2), var(--bg-1));
+  background: radial-gradient(1200px 600px at 50% -8%, var(--teal), var(--teal-deep));
   color: var(--text);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 18px;
+  padding: 30px 18px;
   min-height: 100vh;
   min-height: 100dvh;
 }
 
+/* ---------- Logo ---------- */
+.brandmark {
+  margin-bottom: 22px;
+  text-align: center;
+}
+.brandmark img {
+  height: 76px;
+  width: auto;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.25));
+}
+.brandmark-text {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+.brandmark-text small {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  opacity: 0.9;
+  margin-top: 4px;
+}
+
+/* ---------- Thẻ thông tin ---------- */
 .card {
   width: 100%;
   max-width: 420px;
   background: var(--card-bg);
   border-radius: 22px;
-  padding: 34px 26px 38px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  padding: 32px 26px 36px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
   text-align: center;
   animation: rise 0.5s ease;
 }
@@ -47,8 +74,8 @@ body {
   font-size: 13px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 700;
+  color: var(--teal);
+  font-weight: 800;
 }
 .subtitle {
   font-size: 13px;
@@ -66,7 +93,7 @@ body {
   line-height: 1.2;
   margin: 6px 0 4px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--teal-deep);
 }
 .company {
   font-size: 15px;
@@ -75,26 +102,27 @@ body {
 }
 
 .table-box {
-  background: linear-gradient(160deg, #fdfaf3, #f3ead4);
-  border: 1px solid #ecdcb4;
+  background: linear-gradient(160deg, var(--teal-tint), #d7eeee);
+  border: 1px solid var(--teal-line);
   border-radius: 18px;
   padding: 22px 16px;
 }
 .table-label {
   font-size: 13px;
   letter-spacing: 3px;
-  color: #9a7b3f;
-  font-weight: 700;
+  color: var(--teal-dark);
+  font-weight: 800;
 }
 .table-num {
   font-size: 64px;
   font-weight: 900;
   line-height: 1;
   margin-top: 6px;
-  color: #7a5a1e;
+  color: var(--teal);
 }
+
 .table-box.pending {
-  background: #f8fafc;
+  background: #f1f5f9;
   border-color: #e2e8f0;
 }
 .pending-text {
@@ -110,24 +138,14 @@ body {
   line-height: 1.4;
 }
 
-.note {
-  margin-top: 20px;
-  font-size: 15px;
-  color: var(--text);
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 14px 16px;
-  line-height: 1.5;
-}
-
 /* trạng thái: loading / lỗi / hướng dẫn */
 .state { padding: 30px 6px; }
-.msg-title { font-size: 20px; font-weight: 700; color: #0f172a; }
+.msg-title { font-size: 20px; font-weight: 700; color: var(--teal-deep); }
 .msg-sub { margin-top: 10px; color: var(--muted); font-size: 15px; line-height: 1.5; }
 
 footer {
   margin-top: 18px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 12.5px;
   text-align: center;
   max-width: 420px;
