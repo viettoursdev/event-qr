@@ -6,10 +6,12 @@
   "scripts": {
     "import": "node scripts/import.mjs",
     "qr": "node scripts/qrcodes.mjs",
-    "build": "npm run import && npm run qr",
+    "pdf": "node scripts/pdf.mjs",
+    "build": "npm run import && npm run qr && npm run pdf",
     "preview": "node scripts/preview.mjs"
   },
   "dependencies": {
+    "pdfkit": "^0.15.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.33.5",
     "xlsx": "^0.18.5"
