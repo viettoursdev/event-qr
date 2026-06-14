@@ -53,9 +53,11 @@ export const staffEmail = "checkin@viettours.local"; // đúng email ở bước
 
 ## C. Nạp danh sách khách (có SĐT) lên Firestore
 
-1. Chuẩn bị file `data/checkin.xlsx` — **giống file QR nhưng thêm cột SĐT**.
-   Cột mặc định: `STT`, `TÊN KHÁCH MỜI`, `TÊN CÔNG TY`, `Số điện thoại`, `Số bàn`
+1. Dùng **chung 1 file** `data/guests.xlsx` với phần QR — chỉ cần **thêm cột SĐT**.
+   Cột: `STT`, `TÊN KHÁCH MỜI`, `TÊN CÔNG TY`, `Số điện thoại`, `Số bàn`
    (sửa tên cột trong `config.mjs > checkin.columns` nếu khác).
+   Cả QR và check-in đều khóa theo **STT** → một file, cập nhật một lần, đồng bộ cả hai.
+   ⚠️ Cột SĐT chỉ lên Firestore (có bảo vệ) — import QR **không** đưa SĐT lên web công khai.
 
 2. Chạy:
    ```bash

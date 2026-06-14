@@ -48,10 +48,11 @@ export const config = {
   },
 
   // --- App CHECK-IN (Firebase) — chỉ dùng cho scripts/checkin-import.mjs ---
-  // File này cần CÓ cột số điện thoại (khác file QR). SĐT chỉ nạp lên Firestore,
-  // không bao giờ lên trang web tĩnh công khai.
+  // DÙNG CHUNG 1 file Excel với phần QR (data/guests.xlsx), chỉ cần thêm cột SĐT.
+  // Cả hai pipeline khóa theo STT nên đồng bộ tự nhiên. SĐT chỉ nạp lên Firestore,
+  // KHÔNG bao giờ lên trang web tĩnh công khai (import QR chỉ lấy tên/công ty/bàn).
   checkin: {
-    inputFile: "data/checkin.xlsx",
+    inputFile: "data/guests.xlsx", // cùng file với QR; chỉ cần có thêm cột SĐT
     serviceAccount: "private/serviceAccount.json", // tải từ Firebase Console (gitignored)
     collection: "guests",
     columns: {
