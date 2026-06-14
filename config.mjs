@@ -4,8 +4,8 @@
 
 export const config = {
   // --- Thông tin sự kiện (hiển thị trên trang web) ---
-  eventName: "Tên Sự Kiện Của Bạn",
-  eventSubtitle: "Thông tin bàn tiệc của Quý khách",
+  eventName: "Kỷ niệm Viettours 25 năm",
+  eventSubtitle: "Ân tình vạn dặm",
   footerNote: "Vui lòng liên hệ lễ tân nếu cần hỗ trợ.",
 
   // --- URL gốc nơi web app được host trên GitHub Pages ---
@@ -45,5 +45,21 @@ export const config = {
     // Bố cục trang in (print.html) — số thẻ mỗi hàng/cột trên 1 trang A4
     cardsPerRow: 2,
     cardsPerCol: 4,
+  },
+
+  // --- App CHECK-IN (Firebase) — chỉ dùng cho scripts/checkin-import.mjs ---
+  // File này cần CÓ cột số điện thoại (khác file QR). SĐT chỉ nạp lên Firestore,
+  // không bao giờ lên trang web tĩnh công khai.
+  checkin: {
+    inputFile: "data/checkin.xlsx",
+    serviceAccount: "private/serviceAccount.json", // tải từ Firebase Console (gitignored)
+    collection: "guests",
+    columns: {
+      stt: "STT",
+      name: "TÊN KHÁCH MỜI",
+      company: "TÊN CÔNG TY",
+      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn
+      table: "Số bàn",
+    },
   },
 };

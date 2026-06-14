@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Danh sách khách + trạng thái check-in
+    match /guests/{id} {
+      // Chỉ nhân viên đã đăng nhập mới đọc được (bảo vệ SĐT)
+      allow read: if request.auth != null;
+
+      // Nhân viên chỉ được sửa 3 trường check-in, không sửa được tên/SĐT/bàn
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['checkedIn', 'checkinAt', 'checkinBy']);
+
+      // Thêm/xoá khách chỉ làm qua script admin (bỏ qua rules)
+      allow create, delete: if false;
+    }
+  }
+}

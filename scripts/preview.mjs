@@ -13,7 +13,9 @@ http
   .createServer((req, res) => {
     let url = decodeURIComponent(req.url.split("?")[0].split("#")[0]);
     if (url === "/") url = "/index.html";
-    const file = path.join(root, url);
+    let file = path.join(root, url);
+    // thư mục -> phục vụ index.html bên trong (vd /checkin/ -> /checkin/index.html)
+    if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
       return res.end("404");

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Check-in khách mời</title>
+    <link rel="stylesheet" href="./checkin.css" />
+  </head>
+  <body>
+    <!-- Màn hình đăng nhập -->
+    <section id="login" class="login">
+      <div class="login-card">
+        <div class="brand" id="brandName">Check-in khách mời</div>
+        <div class="login-sub">Dành cho nhân viên đón khách</div>
+        <label class="field">
+          <span>Tên quầy / máy</span>
+          <input id="station" type="text" placeholder="VD: Quầy A, Cổng chính…" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Mã nhân viên (PIN)</span>
+          <input id="pin" type="password" placeholder="Nhập mã" autocomplete="off" />
+        </label>
+        <button id="loginBtn" class="btn-primary">Vào ca trực</button>
+        <div id="loginError" class="error"></div>
+        <div id="demoNote" class="demo-note" hidden>● CHẾ ĐỘ DEMO — dữ liệu mẫu, không lưu thật</div>
+      </div>
+    </section>
+
+    <!-- Ứng dụng check-in -->
+    <section id="app" class="app" hidden>
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="event" id="eventName"></div>
+          <div class="counter"><b id="countDone">0</b><span>/<span id="countTotal">0</span> đã check-in</span></div>
+        </div>
+        <div class="topbar-right">
+          <span class="station-tag">🖥 <span id="stationTag"></span></span>
+          <button id="logoutBtn" class="btn-ghost">Thoát</button>
+        </div>
+      </header>
+
+      <div class="search-wrap">
+        <input id="search" type="text" inputmode="search" autocomplete="off"
+          placeholder="Tìm theo tên, số điện thoại hoặc công ty…" />
+        <button id="clearSearch" class="clear" hidden>✕</button>
+      </div>
+
+      <div id="results" class="results"></div>
+      <div id="statusbar" class="statusbar" hidden></div>
+    </section>
+
+    <script type="module" src="./checkin.js"></script>
+  </body>
+</html>
