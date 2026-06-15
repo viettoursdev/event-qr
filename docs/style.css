@@ -101,6 +101,26 @@ body {
   margin: 0 0 22px;
 }
 
+.stt-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.stt-line span {
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--teal-dark);
+}
+.stt-line b {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--teal-deep);
+}
+
 .table-box {
   background: linear-gradient(160deg, var(--teal-tint), #d7eeee);
   border: 1px solid var(--teal-line);
