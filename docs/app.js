@@ -47,7 +47,7 @@
       ${tableBox}
       <div class="confirm-area" id="confirmArea"></div>
     `);
-    setupConfirm(g);
+    setupConfirm(g, cfg);
   }
 
   // ----- Xác nhận tham dự (RSVP) -----
@@ -72,13 +72,34 @@
     );
   }
 
-  function setupConfirm(g) {
+  function fmtDeadline(ms) {
+    try {
+      const parts = new Intl.DateTimeFormat("vi-VN", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).formatToParts(ms);
+      const g = (t) => (parts.find((x) => x.type === t) || {}).value || "";
+      return `${g("hour")}:${g("minute")} ${g("day")}/${g("month")}/${g("year")}`;
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function setupConfirm(g, cfg) {
     const area = document.getElementById("confirmArea");
     if (!area) return;
     const key = "vt.confirmed." + getToken();
     let confirmed = localStorage.getItem(key) === "1";
 
+    const deadline = cfg && cfg.confirmDeadline ? Date.parse(cfg.confirmDeadline) : NaN;
+    const closed = !isNaN(deadline) && Date.now() > deadline;
+
     async function setConfirm(on) {
+      if (closed) return; // hết hạn -> khoá thao tác
       confirmed = on;
       localStorage.setItem(key, on ? "1" : "0");
       paint();
@@ -92,8 +113,14 @@
       if (confirmed) {
         area.innerHTML =
           `<div class="confirm-done">✓ Đã xác nhận tham dự</div>` +
-          `<button type="button" class="confirm-cancel">Hủy xác nhận</button>`;
-        area.querySelector(".confirm-cancel").onclick = () => setConfirm(false);
+          (closed ? "" : `<button type="button" class="confirm-cancel">Hủy xác nhận</button>`);
+        const c = area.querySelector(".confirm-cancel");
+        if (c) c.onclick = () => setConfirm(false);
+      } else if (closed) {
+        area.innerHTML =
+          `<div class="confirm-closed">Đã hết hạn xác nhận tham dự` +
+          (!isNaN(deadline) ? `<small>Hạn chót: ${fmtDeadline(deadline)}</small>` : "") +
+          `</div>`;
       } else {
         area.innerHTML = `<button type="button" class="confirm-btn">Xác nhận tham dự</button>`;
         area.querySelector(".confirm-btn").onclick = () => setConfirm(true);

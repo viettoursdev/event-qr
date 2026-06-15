@@ -8,6 +8,10 @@ export const config = {
   eventSubtitle: "ÂN TÌNH VẠN DẶM",
   footerNote: "Vui lòng liên hệ hotline số 0919 51 7777 để được hỗ trợ hoặc có yêu cầu đặc biệt về ăn uống.",
 
+  // Hạn chót khách tự bấm "Xác nhận tham dự" trên trang QR. Sau mốc này nút bị KHOÁ.
+  // Định dạng ISO kèm múi giờ VN (+07:00). Để "" nếu không giới hạn thời gian.
+  confirmDeadline: "2026-07-01T17:30:00+07:00",
+
   // --- URL gốc nơi web app được host trên GitHub Pages ---
   // Sau khi tạo repo GitHub tên "event-qr" với username "tuanhoang",
   // địa chỉ sẽ là: https://tuanhoang.github.io/event-qr/

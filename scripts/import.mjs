@@ -157,7 +157,12 @@ fs.writeFileSync(tokensPath, JSON.stringify(tokenMap, null, 2));
 fs.writeFileSync(
   p("docs", "config.json"),
   JSON.stringify(
-    { eventName: config.eventName, eventSubtitle: config.eventSubtitle, footerNote: config.footerNote },
+    {
+      eventName: config.eventName,
+      eventSubtitle: config.eventSubtitle,
+      footerNote: config.footerNote,
+      confirmDeadline: config.confirmDeadline || "",
+    },
     null,
     2
   )

@@ -191,6 +191,21 @@ body {
   text-decoration: underline;
   cursor: pointer;
 }
+.confirm-closed {
+  font-size: 15px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  padding: 14px;
+}
+.confirm-closed small {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-top: 4px;
+}
 
 /* trạng thái: loading / lỗi / hướng dẫn */
 .state { padding: 30px 6px; }
