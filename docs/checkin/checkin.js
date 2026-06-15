@@ -58,6 +58,15 @@ function makeDemoStore() {
       }
       cb(data.slice());
     },
+    async setConfirm(id, on) {
+      const g = data.find((x) => x.id === id);
+      if (g) {
+        g.confirmed = on;
+        g.confirmedAt = on ? new Date() : null;
+        g.confirmedVia = on ? "staff" : null;
+      }
+      cb(data.slice());
+    },
     async logout() {},
   };
 }
@@ -95,6 +104,13 @@ async function makeFirebaseStore() {
         checkedIn: on,
         checkinAt: on ? serverTimestamp() : null,
         checkinBy: on ? station : null,
+      });
+    },
+    async setConfirm(id, on) {
+      await updateDoc(doc(db, "guests", id), {
+        confirmed: on,
+        confirmedAt: on ? serverTimestamp() : null,
+        confirmedVia: on ? "staff" : null,
       });
     },
     async logout() {
@@ -221,6 +237,12 @@ function render() {
   box.querySelectorAll("[data-undo]").forEach((btn) =>
     btn.addEventListener("click", () => toggleCheckin(btn.getAttribute("data-undo"), false))
   );
+  box.querySelectorAll("[data-confirm]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleConfirm(btn.getAttribute("data-confirm"), true))
+  );
+  box.querySelectorAll("[data-unconfirm]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleConfirm(btn.getAttribute("data-unconfirm"), false))
+  );
 }
 
 function confirmBadge(g) {
@@ -229,27 +251,30 @@ function confirmBadge(g) {
     : `<span class="badge confirm-no">Chưa xác nhận</span>`;
 }
 
+function confirmBtn(g) {
+  return g.confirmed
+    ? `<button class="btn-confirm on" data-unconfirm="${esc(g.id)}">Bỏ xác nhận</button>`
+    : `<button class="btn-confirm" data-confirm="${esc(g.id)}">Xác nhận</button>`;
+}
+
 function card(g) {
   const phone = g.phone ? esc(g.phone) : "—";
   const table = g.table ? `Bàn ${esc(g.table)}` : "Chưa xếp bàn";
-  if (g.checkedIn) {
-    return `<div class="card done">
-      <div class="card-main">
-        <div class="name">${esc(g.name)} <span class="badge ok">✓ Đã check-in</span> ${confirmBadge(g)}</div>
-        <div class="sub">${esc(g.company || "")}</div>
-        <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
-        <div class="ci-info">Lúc ${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + esc(g.checkinBy) : ""}</div>
-      </div>
-      <button class="btn-undo" data-undo="${esc(g.id)}">Hoàn tác</button>
-    </div>`;
-  }
-  return `<div class="card">
+  const ciBtn = g.checkedIn
+    ? `<button class="btn-undo" data-undo="${esc(g.id)}">Hoàn tác</button>`
+    : `<button class="btn-checkin" data-checkin="${esc(g.id)}">Check-in</button>`;
+  const ciInfo = g.checkedIn
+    ? `<div class="ci-info">Lúc ${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + esc(g.checkinBy) : ""}</div>`
+    : "";
+  const ciTag = g.checkedIn ? `<span class="badge ok">✓ Đã check-in</span> ` : "";
+  return `<div class="card${g.checkedIn ? " done" : ""}">
     <div class="card-main">
-      <div class="name">${esc(g.name)} ${confirmBadge(g)}</div>
+      <div class="name">${esc(g.name)} ${ciTag}${confirmBadge(g)}</div>
       <div class="sub">${esc(g.company || "")}</div>
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
+      ${ciInfo}
     </div>
-    <button class="btn-checkin" data-checkin="${esc(g.id)}">Check-in</button>
+    <div class="card-actions">${confirmBtn(g)}${ciBtn}</div>
   </div>`;
 }
 
@@ -262,6 +287,16 @@ async function toggleCheckin(id, on) {
   try {
     await store.setCheckin(id, on);
     if (on && g) flash(`✓ Đã check-in: ${g.name}`);
+  } catch (e) {
+    flash("Lỗi khi lưu, vui lòng thử lại.", true);
+  }
+}
+
+async function toggleConfirm(id, on) {
+  const g = guests.find((x) => x.id === id);
+  try {
+    await store.setConfirm(id, on);
+    if (g) flash(on ? `✓ Đã xác nhận: ${g.name}` : `Đã bỏ xác nhận: ${g.name}`);
   } catch (e) {
     flash("Lỗi khi lưu, vui lòng thử lại.", true);
   }

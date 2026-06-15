@@ -16,8 +16,8 @@ service cloud.firestore {
       allow read: if isStaff();
 
       allow update: if
-        // Nhân viên: chỉ sửa 3 trường check-in
-        (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy']))
+        // Nhân viên: sửa trường check-in và/hoặc xác nhận (xác nhận hộ khách)
+        (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia']))
         // Khách (đăng nhập ẩn danh từ trang QR): chỉ sửa 3 trường xác nhận
         || (request.auth != null && changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia']));
 

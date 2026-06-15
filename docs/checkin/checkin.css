@@ -101,6 +101,14 @@ body {
 .badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }
 .badge.confirm-no { background: #fef3f2; color: #b42318; border: 1px solid #fcdcd7; }
 
+.card-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: stretch; }
+.btn-confirm {
+  padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  color: var(--teal); background: #fff; border: 1.5px solid var(--teal); border-radius: 10px;
+}
+.btn-confirm:active { transform: scale(.97); }
+.btn-confirm.on { color: var(--muted); background: #fff; border-color: var(--line); font-weight: 600; }
+
 .btn-checkin {
   flex-shrink: 0; padding: 12px 18px; font-size: 15px; font-weight: 700; color: #fff;
   background: var(--ok); border: none; border-radius: 11px; cursor: pointer;
