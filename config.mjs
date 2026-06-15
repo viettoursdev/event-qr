@@ -5,8 +5,8 @@
 export const config = {
   // --- Thông tin sự kiện (hiển thị trên trang web) ---
   eventName: "Kỷ niệm Viettours 25 năm",
-  eventSubtitle: "Ân tình vạn dặm",
-  footerNote: "Vui lòng liên hệ lễ tân nếu cần hỗ trợ.",
+  eventSubtitle: "ÂN TÌNH VẠN DẶM",
+  footerNote: "Vui lòng liên hệ hotline số 0919 51 7777 để được hỗ trợ hoặc có yêu cầu đặc biệt về ăn uống.",
 
   // --- URL gốc nơi web app được host trên GitHub Pages ---
   // Sau khi tạo repo GitHub tên "event-qr" với username "tuanhoang",

@@ -134,8 +134,10 @@ for (const row of rows) {
   if (!table) blankTables++;
 
   // Dữ liệu CÔNG KHAI cho web
+  const stt = idColumn ? String(row[idColumn] ?? "").trim() : "";
   const pub = { name };
   if (company) pub.company = company;
+  if (stt) pub.stt = stt;
   pub.table = table; // có thể rỗng -> web hiển thị "Đang cập nhật"
   fs.writeFileSync(p("docs", "g", `${token}.json`), JSON.stringify(pub));
 

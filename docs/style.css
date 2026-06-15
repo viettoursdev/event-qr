@@ -158,6 +158,40 @@ body {
   line-height: 1.4;
 }
 
+/* ---------- Xác nhận tham dự ---------- */
+.confirm-area { margin-top: 20px; }
+.confirm-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(180deg, var(--teal-bright), var(--teal));
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(12, 124, 128, 0.28);
+}
+.confirm-btn:active { transform: scale(0.98); }
+.confirm-done {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--teal);
+  background: var(--teal-tint);
+  border: 1px solid var(--teal-line);
+  border-radius: 13px;
+  padding: 14px;
+}
+.confirm-cancel {
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* trạng thái: loading / lỗi / hướng dẫn */
 .state { padding: 30px 6px; }
 .msg-title { font-size: 20px; font-weight: 700; color: var(--teal-deep); }

@@ -175,6 +175,8 @@ function onData(arr) {
   const done = guests.filter((g) => g.checkedIn).length;
   $("countDone").textContent = done;
   $("countTotal").textContent = guests.length;
+  const cf = $("countConfirm");
+  if (cf) cf.textContent = guests.filter((g) => g.confirmed).length;
   render();
 }
 
@@ -221,13 +223,19 @@ function render() {
   );
 }
 
+function confirmBadge(g) {
+  return g.confirmed
+    ? `<span class="badge confirm-yes">✓ Đã xác nhận</span>`
+    : `<span class="badge confirm-no">Chưa xác nhận</span>`;
+}
+
 function card(g) {
   const phone = g.phone ? esc(g.phone) : "—";
   const table = g.table ? `Bàn ${esc(g.table)}` : "Chưa xếp bàn";
   if (g.checkedIn) {
     return `<div class="card done">
       <div class="card-main">
-        <div class="name">${esc(g.name)} <span class="badge ok">✓ Đã check-in</span></div>
+        <div class="name">${esc(g.name)} <span class="badge ok">✓ Đã check-in</span> ${confirmBadge(g)}</div>
         <div class="sub">${esc(g.company || "")}</div>
         <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
         <div class="ci-info">Lúc ${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + esc(g.checkinBy) : ""}</div>
@@ -237,7 +245,7 @@ function card(g) {
   }
   return `<div class="card">
     <div class="card-main">
-      <div class="name">${esc(g.name)}</div>
+      <div class="name">${esc(g.name)} ${confirmBadge(g)}</div>
       <div class="sub">${esc(g.company || "")}</div>
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
     </div>

@@ -45,7 +45,61 @@
       ${g.company ? `<div class="company">${esc(g.company)}</div>` : ""}
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}
+      <div class="confirm-area" id="confirmArea"></div>
     `);
+    setupConfirm(g);
+  }
+
+  // ----- Xác nhận tham dự (RSVP) -----
+  let _fb;
+  async function remoteConfirm(stt, on) {
+    if (!stt) return;
+    const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
+    const { firebaseConfig } = await import("./checkin/config.js");
+    if (!firebaseConfig || !firebaseConfig.apiKey) return; // DEMO: chỉ lưu cục bộ
+    if (!_fb) {
+      const { initializeApp } = await import(`${SDK}/firebase-app.js`);
+      const { getAuth, signInAnonymously } = await import(`${SDK}/firebase-auth.js`);
+      const { getFirestore, doc, setDoc, serverTimestamp } = await import(`${SDK}/firebase-firestore.js`);
+      const app = initializeApp(firebaseConfig, "guest");
+      await signInAnonymously(getAuth(app));
+      _fb = { db: getFirestore(app), doc, setDoc, serverTimestamp };
+    }
+    await _fb.setDoc(
+      _fb.doc(_fb.db, "guests", String(stt)),
+      { confirmed: on, confirmedAt: on ? _fb.serverTimestamp() : null, confirmedVia: "qr" },
+      { merge: true }
+    );
+  }
+
+  function setupConfirm(g) {
+    const area = document.getElementById("confirmArea");
+    if (!area) return;
+    const key = "vt.confirmed." + getToken();
+    let confirmed = localStorage.getItem(key) === "1";
+
+    async function setConfirm(on) {
+      confirmed = on;
+      localStorage.setItem(key, on ? "1" : "0");
+      paint();
+      try {
+        await remoteConfirm(g.stt, on);
+      } catch (_) {
+        /* đã lưu cục bộ; bỏ qua lỗi mạng */
+      }
+    }
+    function paint() {
+      if (confirmed) {
+        area.innerHTML =
+          `<div class="confirm-done">✓ Đã xác nhận tham dự</div>` +
+          `<button type="button" class="confirm-cancel">Hủy xác nhận</button>`;
+        area.querySelector(".confirm-cancel").onclick = () => setConfirm(false);
+      } else {
+        area.innerHTML = `<button type="button" class="confirm-btn">Xác nhận tham dự</button>`;
+        area.querySelector(".confirm-btn").onclick = () => setConfirm(true);
+      }
+    }
+    paint();
   }
 
   async function main() {

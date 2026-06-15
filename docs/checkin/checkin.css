@@ -98,6 +98,8 @@ body {
 .ci-info { font-size: 12.5px; color: var(--ok); margin-top: 5px; font-weight: 600; }
 .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .badge.ok { background: var(--ok); color: #fff; }
+.badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }
+.badge.confirm-no { background: #fef3f2; color: #b42318; border: 1px solid #fcdcd7; }
 
 .btn-checkin {
   flex-shrink: 0; padding: 12px 18px; font-size: 15px; font-weight: 700; color: #fff;
