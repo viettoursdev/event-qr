@@ -29,6 +29,7 @@ let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt
 let station = localStorage.getItem("checkin.station") || "";
 let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
 let filterUnconfirmed = false; // chỉ hiện khách chưa xác nhận
+let filterUnchecked = false; // chỉ hiện khách chưa check-in
 
 // ---------- khởi tạo ----------
 $("eventName").textContent = eventName;
@@ -175,6 +176,10 @@ function enterApp() {
     filterUnconfirmed = !filterUnconfirmed;
     render();
   });
+  $("filterUnchecked").addEventListener("click", () => {
+    filterUnchecked = !filterUnchecked;
+    render();
+  });
   $("logoutBtn").addEventListener("click", async () => {
     await store.logout();
     location.reload();
@@ -201,6 +206,9 @@ function onData(arr) {
   const unconf = guests.filter((g) => !g.confirmed).length;
   const chip = $("chipCount");
   if (chip) chip.textContent = unconf ? `(${unconf})` : "";
+  const unchecked = guests.length - done;
+  const chipC = $("chipCountCheckin");
+  if (chipC) chipC.textContent = unchecked ? `(${unchecked})` : "";
   render();
 }
 
@@ -227,31 +235,41 @@ function render() {
   $("clearSearch").hidden = !q;
   const box = $("results");
   $("filterUnconfirmed").classList.toggle("active", filterUnconfirmed);
+  $("filterUnchecked").classList.toggle("active", filterUnchecked);
+  const anyFilter = filterUnconfirmed || filterUnchecked;
 
-  let list, emptyHint;
+  // nhãn các bộ lọc đang bật
+  const fl = [];
+  if (filterUnchecked) fl.push("chưa check-in");
+  if (filterUnconfirmed) fl.push("chưa xác nhận");
+
+  let list;
   if (q.trim()) {
     list = search(q);
-    emptyHint = `Không tìm thấy khách phù hợp với “${esc(q)}”.`;
-  } else if (filterUnconfirmed) {
+  } else if (anyFilter) {
     list = guests.slice();
-    emptyHint = "Tất cả khách đã được xác nhận. 🎉";
   } else {
     box.innerHTML = `<div class="hint">Nhập tên, STT, số điện thoại hoặc công ty để tìm khách.</div>`;
     return;
   }
 
+  if (filterUnchecked) list = list.filter((g) => !g.checkedIn);
   if (filterUnconfirmed) list = list.filter((g) => !g.confirmed);
 
   if (list.length === 0) {
-    box.innerHTML = `<div class="hint">${emptyHint}</div>`;
+    const empty = q.trim() ? `Không tìm thấy khách phù hợp với “${esc(q)}”.` : "Không có khách nào khớp bộ lọc. 🎉";
+    box.innerHTML = `<div class="hint">${empty}</div>`;
     return;
   }
 
   const cap = 100;
   const dup = !!q.trim() && list.length > 1;
-  const label = filterUnconfirmed
-    ? `${list.length} khách chưa xác nhận`
-    : `${list.length} kết quả${dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
+  let label;
+  if (q.trim()) {
+    label = `${list.length} kết quả${fl.length ? ` · lọc: ${fl.join(" & ")}` : dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
+  } else {
+    label = `${list.length} khách ${fl.join(" & ")}`;
+  }
   const head = `<div class="result-head">${label}${list.length > cap ? ` (hiện ${cap} đầu)` : ""}</div>`;
   box.innerHTML = head + list.slice(0, cap).map(card).join("");
 
