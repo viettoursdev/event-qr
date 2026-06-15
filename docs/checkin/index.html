@@ -54,8 +54,12 @@
 
       <div class="search-wrap">
         <input id="search" type="text" inputmode="search" autocomplete="off"
-          placeholder="Tìm theo tên, số điện thoại hoặc công ty…" />
+          placeholder="Tìm theo tên, STT, số điện thoại hoặc công ty…" />
         <button id="clearSearch" class="clear" hidden>✕</button>
+      </div>
+
+      <div class="filterbar">
+        <button id="filterUnconfirmed" class="chip" type="button">Chưa xác nhận <b id="chipCount"></b></button>
       </div>
 
       <div id="results" class="results"></div>

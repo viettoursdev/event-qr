@@ -25,9 +25,10 @@ function fmtTime(t) {
 }
 
 // ---------- trạng thái ----------
-let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt, checkinBy, _n}]
+let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt, checkinBy, confirmed, _n}]
 let station = localStorage.getItem("checkin.station") || "";
 let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
+let filterUnconfirmed = false; // chỉ hiện khách chưa xác nhận
 
 // ---------- khởi tạo ----------
 $("eventName").textContent = eventName;
@@ -170,6 +171,10 @@ function enterApp() {
     s.focus();
     render();
   });
+  $("filterUnconfirmed").addEventListener("click", () => {
+    filterUnconfirmed = !filterUnconfirmed;
+    render();
+  });
   $("logoutBtn").addEventListener("click", async () => {
     await store.logout();
     location.reload();
@@ -193,19 +198,26 @@ function onData(arr) {
   $("countTotal").textContent = guests.length;
   const cf = $("countConfirm");
   if (cf) cf.textContent = guests.filter((g) => g.confirmed).length;
+  const unconf = guests.filter((g) => !g.confirmed).length;
+  const chip = $("chipCount");
+  if (chip) chip.textContent = unconf ? `(${unconf})` : "";
   render();
 }
 
 function search(q) {
+  const raw = q.trim();
   const nq = norm(q);
   const dq = digits(q);
   if (!nq && !dq) return [];
   const tokens = nq.split(" ").filter(Boolean);
+  const isNumeric = raw !== "" && /^\d+$/.test(raw);
   return guests.filter((g) => {
-    const textOk = tokens.every((t) => g._n.includes(t));
+    const stt = String(g.stt == null ? "" : g.stt);
+    const textOk = tokens.length > 0 && tokens.every((t) => g._n.includes(t));
     const phoneOk = dq.length >= 2 && g._phone.includes(dq);
-    // nếu truy vấn là số -> ưu tiên khớp SĐT; nếu là chữ -> khớp tên/công ty
-    if (dq.length >= 2 && /^\d+$/.test(q.trim())) return phoneOk;
+    const sttOk = isNumeric && (stt === raw || stt.startsWith(raw));
+    // truy vấn toàn số -> khớp STT hoặc SĐT; ngược lại -> khớp tên/công ty
+    if (isNumeric) return sttOk || phoneOk;
     return textOk || phoneOk;
   });
 }
@@ -214,22 +226,34 @@ function render() {
   const q = $("search").value;
   $("clearSearch").hidden = !q;
   const box = $("results");
+  $("filterUnconfirmed").classList.toggle("active", filterUnconfirmed);
 
-  if (!q.trim()) {
-    box.innerHTML = `<div class="hint">Nhập tên, số điện thoại hoặc công ty để tìm khách.</div>`;
+  let list, emptyHint;
+  if (q.trim()) {
+    list = search(q);
+    emptyHint = `Không tìm thấy khách phù hợp với “${esc(q)}”.`;
+  } else if (filterUnconfirmed) {
+    list = guests.slice();
+    emptyHint = "Tất cả khách đã được xác nhận. 🎉";
+  } else {
+    box.innerHTML = `<div class="hint">Nhập tên, STT, số điện thoại hoặc công ty để tìm khách.</div>`;
     return;
   }
-  const matches = search(q);
-  if (matches.length === 0) {
-    box.innerHTML = `<div class="hint">Không tìm thấy khách phù hợp với “${esc(q)}”.</div>`;
+
+  if (filterUnconfirmed) list = list.filter((g) => !g.confirmed);
+
+  if (list.length === 0) {
+    box.innerHTML = `<div class="hint">${emptyHint}</div>`;
     return;
   }
 
-  const dup = matches.length > 1;
-  const head = `<div class="result-head">${matches.length} kết quả${
-    dup ? ` — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)` : ""
-  }</div>`;
-  box.innerHTML = head + matches.slice(0, 60).map(card).join("");
+  const cap = 100;
+  const dup = !!q.trim() && list.length > 1;
+  const label = filterUnconfirmed
+    ? `${list.length} khách chưa xác nhận`
+    : `${list.length} kết quả${dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
+  const head = `<div class="result-head">${label}${list.length > cap ? ` (hiện ${cap} đầu)` : ""}</div>`;
+  box.innerHTML = head + list.slice(0, cap).map(card).join("");
 
   box.querySelectorAll("[data-checkin]").forEach((btn) =>
     btn.addEventListener("click", () => toggleCheckin(btn.getAttribute("data-checkin"), true))
