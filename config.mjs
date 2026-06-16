@@ -21,14 +21,14 @@ export const config = {
   // --- File Excel đầu vào (đặt trong thư mục data/) ---
   inputFile: "data/guests.xlsx",
   sheetName: null, // null = dùng sheet đầu tiên; hoặc đặt tên sheet cụ thể
-  headerRow: 1, // dòng chứa tiêu đề cột (0 = dòng đầu). File có 1 dòng tựa đề -> header ở dòng index 1.
+  headerRow: 2, // dòng chứa tiêu đề cột (0 = dòng đầu). V3 có tựa đề + 1 dòng trống -> header ở dòng index 2.
 
   // --- Ánh xạ cột: sửa giá trị bên PHẢI cho khớp tên CỘT (header) trong Excel ---
   // Chỉ "name" bắt buộc. "table" có thể để trống lúc đầu, điền sau cũng được.
   columns: {
-    name: "Tên khách",  // bắt buộc
-    company: "Đơn vị",  // tùy chọn — hiển thị dưới tên; để "" nếu không có
-    table: "Số bàn",    // có thể bỏ trống lúc xuất QR, cập nhật sau
+    name: "TÊN KHÁCH MỜI", // bắt buộc
+    company: "ĐƠN VỊ",     // tùy chọn — hiển thị dưới tên; để "" nếu không có
+    table: "SỐ BÀN",       // có thể bỏ trống lúc xuất QR, cập nhật sau
   },
 
   // --- KHÓA ĐỊNH DANH để GIỮ TOKEN CỐ ĐỊNH giữa các lần import ---
@@ -62,10 +62,10 @@ export const config = {
     collection: "event_guests", // collection riêng, tách khỏi dữ liệu app tính giá cùng project
     columns: {
       stt: "STT",
-      name: "Tên khách",
-      company: "Đơn vị",
-      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn (V2 chưa có cột này)
-      table: "Số bàn",
+      name: "TÊN KHÁCH MỜI",
+      company: "ĐƠN VỊ",
+      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn (V3 chưa có cột này)
+      table: "SỐ BÀN",
     },
   },
 };

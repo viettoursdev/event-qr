@@ -50,24 +50,41 @@
     setupConfirm(g, cfg);
   }
 
-  // ----- Xác nhận tham dự (RSVP) -----
-  let _fb;
+  // ----- Firebase: đọc thông tin khách (event_public) + ghi xác nhận (event_guests) -----
+  const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
+  const PUBLIC_COL = "event_public";
+  let _fb; // undefined = chưa nạp; null = chưa cấu hình Firebase
+  async function loadFb() {
+    if (_fb !== undefined) return _fb;
+    const { firebaseConfig, collectionName } = await import("./checkin/config.js");
+    if (!firebaseConfig || !firebaseConfig.apiKey) return (_fb = null);
+    const { initializeApp } = await import(`${SDK}/firebase-app.js`);
+    const { getFirestore, doc, getDoc, setDoc, serverTimestamp } = await import(`${SDK}/firebase-firestore.js`);
+    const { getAuth, signInAnonymously } = await import(`${SDK}/firebase-auth.js`);
+    const app = initializeApp(firebaseConfig, "guest");
+    _fb = { db: getFirestore(app), doc, getDoc, setDoc, serverTimestamp, auth: getAuth(app), signInAnonymously, collectionName };
+    return _fb;
+  }
+
+  // Đọc 1 document theo token (không cần đăng nhập — rules cho phép get, cấm list)
+  async function fetchGuest(token) {
+    const fb = await loadFb();
+    if (!fb) return undefined; // chưa cấu hình -> để main() báo lỗi cấu hình
+    const snap = await fb.getDoc(fb.doc(fb.db, PUBLIC_COL, token));
+    return snap.exists() ? snap.data() : null; // null = không tìm thấy token
+  }
+
   async function remoteConfirm(stt, on) {
     if (!stt) return;
-    const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
-    const { firebaseConfig, collectionName } = await import("./checkin/config.js");
-    if (!firebaseConfig || !firebaseConfig.apiKey) return; // DEMO: chỉ lưu cục bộ
-    if (!_fb) {
-      const { initializeApp } = await import(`${SDK}/firebase-app.js`);
-      const { getAuth, signInAnonymously } = await import(`${SDK}/firebase-auth.js`);
-      const { getFirestore, doc, setDoc, serverTimestamp } = await import(`${SDK}/firebase-firestore.js`);
-      const app = initializeApp(firebaseConfig, "guest");
-      await signInAnonymously(getAuth(app));
-      _fb = { db: getFirestore(app), doc, setDoc, serverTimestamp };
+    const fb = await loadFb();
+    if (!fb) return; // chưa cấu hình
+    if (!fb._authed) {
+      await fb.signInAnonymously(fb.auth);
+      fb._authed = true;
     }
-    await _fb.setDoc(
-      _fb.doc(_fb.db, collectionName, String(stt)),
-      { confirmed: on, confirmedAt: on ? _fb.serverTimestamp() : null, confirmedVia: "qr" },
+    await fb.setDoc(
+      fb.doc(fb.db, fb.collectionName, String(stt)),
+      { confirmed: on, confirmedAt: on ? fb.serverTimestamp() : null, confirmedVia: "qr" },
       { merge: true }
     );
   }
@@ -149,9 +166,12 @@
     }
 
     try {
-      const res = await fetch(`./g/${token}.json`, { cache: "no-cache" });
-      if (!res.ok) throw new Error("not found");
-      const g = await res.json();
+      const g = await fetchGuest(token);
+      if (g === undefined) {
+        showMessage("Chưa sẵn sàng", "Hệ thống đang được cấu hình. Vui lòng thử lại sau hoặc liên hệ lễ tân.");
+        return;
+      }
+      if (!g) throw new Error("not found");
       renderGuest(cfg, g);
       document.title = (g.name ? g.name + " — " : "") + (cfg.eventName || "Thông tin bàn tiệc");
     } catch (e) {

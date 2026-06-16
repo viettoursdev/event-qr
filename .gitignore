@@ -5,4 +5,7 @@ data/*.xlsx
 data/*.xls
 private/
 
+# Dữ liệu khách dạng tĩnh — KHÔNG đẩy lên repo public (trang QR đọc từ Firestore event_public)
+docs/g/*.json
+
 .DS_Store
