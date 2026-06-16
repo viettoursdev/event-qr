@@ -6,13 +6,13 @@
 // =====================================================================
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyAHheOCuSAjAhkl2btpzl98kMrAz2sJPQE",
-  authDomain: "viettours-event.firebaseapp.com",
-  projectId: "viettours-event",
-  storageBucket: "viettours-event.firebasestorage.app",
-  messagingSenderId: "1088158917540",
-  appId: "1:1088158917540:web:500db2da61f38da85ed731",
-  measurementId: "G-L010RK7B14",
+  apiKey: "AIzaSyBZBJIoq_WXw_-2ykCiGQniJHTuWxRwge8",
+  authDomain: "tour-cost-calculator-4336c.firebaseapp.com",
+  projectId: "tour-cost-calculator-4336c",
+  storageBucket: "tour-cost-calculator-4336c.firebasestorage.app",
+  messagingSenderId: "763125494718",
+  appId: "1:763125494718:web:234f075aa9934b1fabffef",
+  measurementId: "G-99VTLQ2XTL",
 };
 
 // Tài khoản nhân viên dùng chung (tạo trong Firebase Auth > Email/Password).
@@ -20,6 +20,9 @@ export const firebaseConfig = {
 export const staffEmail = "checkin@viettours.local";
 
 export const eventName = "Kỷ niệm Viettours 25 năm";
+
+// Collection Firestore RIÊNG cho sự kiện (tách khỏi dữ liệu app khác trong cùng project).
+export const collectionName = "event_guests";
 
 // --- Dữ liệu mẫu chỉ dùng cho CHẾ ĐỘ DEMO ---
 export const demoGuests = [

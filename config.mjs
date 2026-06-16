@@ -21,13 +21,14 @@ export const config = {
   // --- File Excel đầu vào (đặt trong thư mục data/) ---
   inputFile: "data/guests.xlsx",
   sheetName: null, // null = dùng sheet đầu tiên; hoặc đặt tên sheet cụ thể
+  headerRow: 1, // dòng chứa tiêu đề cột (0 = dòng đầu). File có 1 dòng tựa đề -> header ở dòng index 1.
 
   // --- Ánh xạ cột: sửa giá trị bên PHẢI cho khớp tên CỘT (header) trong Excel ---
   // Chỉ "name" bắt buộc. "table" có thể để trống lúc đầu, điền sau cũng được.
   columns: {
-    name: "TÊN KHÁCH MỜI",   // bắt buộc
-    company: "TÊN CÔNG TY",  // tùy chọn — hiển thị dưới tên; để "" nếu không có
-    table: "Số bàn",         // có thể bỏ trống lúc xuất QR, cập nhật sau
+    name: "Tên khách",  // bắt buộc
+    company: "Đơn vị",  // tùy chọn — hiển thị dưới tên; để "" nếu không có
+    table: "Số bàn",    // có thể bỏ trống lúc xuất QR, cập nhật sau
   },
 
   // --- KHÓA ĐỊNH DANH để GIỮ TOKEN CỐ ĐỊNH giữa các lần import ---
@@ -58,12 +59,12 @@ export const config = {
   checkin: {
     inputFile: "data/guests.xlsx", // cùng file với QR; chỉ cần có thêm cột SĐT
     serviceAccount: "private/serviceAccount.json", // tải từ Firebase Console (gitignored)
-    collection: "guests",
+    collection: "event_guests", // collection riêng, tách khỏi dữ liệu app tính giá cùng project
     columns: {
       stt: "STT",
-      name: "TÊN KHÁCH MỜI",
-      company: "TÊN CÔNG TY",
-      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn
+      name: "Tên khách",
+      company: "Đơn vị",
+      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn (V2 chưa có cột này)
       table: "Số bàn",
     },
   },

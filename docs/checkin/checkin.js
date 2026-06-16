@@ -1,4 +1,4 @@
-import { firebaseConfig, staffEmail, eventName, demoGuests } from "./config.js";
+import { firebaseConfig, eventName, demoGuests, collectionName } from "./config.js";
 
 const DEMO = !firebaseConfig || !firebaseConfig.apiKey;
 const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
@@ -99,21 +99,21 @@ async function makeFirebaseStore() {
       return true;
     },
     subscribe(fn) {
-      onSnapshot(collection(db, "guests"), (snap) => {
+      onSnapshot(collection(db, collectionName), (snap) => {
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         fn(arr);
       });
     },
     async setCheckin(id, on) {
-      await updateDoc(doc(db, "guests", id), {
+      await updateDoc(doc(db, collectionName, id), {
         checkedIn: on,
         checkinAt: on ? serverTimestamp() : null,
         checkinBy: on ? station : null,
       });
     },
     async setConfirm(id, on) {
-      await updateDoc(doc(db, "guests", id), {
+      await updateDoc(doc(db, collectionName, id), {
         confirmed: on,
         confirmedAt: on ? serverTimestamp() : null,
         confirmedVia: on ? "staff" : null,

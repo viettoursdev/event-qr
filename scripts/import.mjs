@@ -45,7 +45,7 @@ const sheetName = config.sheetName || wb.SheetNames[0];
 const sheet = wb.Sheets[sheetName];
 if (!sheet) fail(`Không tìm thấy sheet "${sheetName}". Các sheet có sẵn: ${wb.SheetNames.join(", ")}`);
 
-const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", range: config.headerRow || 0 });
 if (rows.length === 0) fail("Sheet rỗng — không có dòng dữ liệu nào.");
 
 const headers = Object.keys(rows[0]);
@@ -144,6 +144,7 @@ for (const row of rows) {
   index.push({
     token,
     url: config.baseUrl.replace(/\/?$/, "/") + "#" + token,
+    stt,
     name,
     company,
     table,

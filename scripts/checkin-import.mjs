@@ -36,7 +36,7 @@ const db = admin.firestore();
 // --- Đọc Excel ---
 const wb = XLSX.readFile(p(cfg.inputFile));
 const sheet = wb.Sheets[wb.SheetNames[0]];
-const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", range: config.headerRow || 0 });
 const headers = Object.keys(rows[0] || {});
 const C = cfg.columns;
 for (const key of ["stt", "name"]) {

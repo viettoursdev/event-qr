@@ -55,7 +55,7 @@
   async function remoteConfirm(stt, on) {
     if (!stt) return;
     const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
-    const { firebaseConfig } = await import("./checkin/config.js");
+    const { firebaseConfig, collectionName } = await import("./checkin/config.js");
     if (!firebaseConfig || !firebaseConfig.apiKey) return; // DEMO: chỉ lưu cục bộ
     if (!_fb) {
       const { initializeApp } = await import(`${SDK}/firebase-app.js`);
@@ -66,7 +66,7 @@
       _fb = { db: getFirestore(app), doc, setDoc, serverTimestamp };
     }
     await _fb.setDoc(
-      _fb.doc(_fb.db, "guests", String(stt)),
+      _fb.doc(_fb.db, collectionName, String(stt)),
       { confirmed: on, confirmedAt: on ? _fb.serverTimestamp() : null, confirmedVia: "qr" },
       { merge: true }
     );

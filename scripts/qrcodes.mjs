@@ -49,8 +49,8 @@ const safeName = (s) =>
     .trim()
     .slice(0, 60);
 
-// Tạo 1 ảnh card: QR ở trên, tên + công ty in bên dưới
-async function makeCard(url, name, company) {
+// Tạo 1 ảnh card: QR ở trên, họ tên + STT in bên dưới
+async function makeCard(url, name, stt) {
   const qrBuf = await QRCode.toBuffer(url, {
     width: pngSize,
     margin,
@@ -78,15 +78,15 @@ async function makeCard(url, name, company) {
     return { fontSize, textLen };
   }
 
+  const sttText = stt ? `STT: ${stt}` : "";
   const nameFit = fitText(name, 40, 22);
-  const companyFit = company ? fitText(company, 26, 16) : null;
-  const labelH = company ? 130 : 90;
+  const labelH = sttText ? 130 : 90;
   const H = padTop + pngSize + labelH;
 
   const labelSvg = `<svg width="${W}" height="${labelH}" xmlns="http://www.w3.org/2000/svg">
     <text x="50%" y="56" text-anchor="middle"${nameFit.textLen}
       font-family="Helvetica, Arial, sans-serif" font-size="${nameFit.fontSize}" font-weight="700" fill="#111111">${xmlEsc(name)}</text>
-    ${company ? `<text x="50%" y="100" text-anchor="middle"${companyFit.textLen} font-family="Helvetica, Arial, sans-serif" font-size="${companyFit.fontSize}" fill="#666666">${xmlEsc(company)}</text>` : ""}
+    ${sttText ? `<text x="50%" y="100" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="26" font-weight="600" fill="#666666">${xmlEsc(sttText)}</text>` : ""}
   </svg>`;
 
   return sharp({ create: { width: W, height: H, channels: 4, background: "#ffffff" } })
@@ -101,7 +101,7 @@ async function makeCard(url, name, company) {
 console.log(`\n🔧 Sinh ${guests.length} mã QR${nameOnImage ? " (có in tên)" : ""}...`);
 let n = 0;
 for (const g of guests) {
-  const buf = await makeCard(g.url, g.name, g.company);
+  const buf = await makeCard(g.url, g.name, g.stt);
   const seq = String(++n).padStart(3, "0");
   const file = `${seq}_${safeName(g.name)}_${g.token}.png`;
   fs.writeFileSync(p("private", "qr", file), buf);
@@ -120,7 +120,7 @@ const cards = guests
       <img src="qr/${encodeURIComponent(file)}" alt="QR ${htmlEsc(g.name)}"/>
       <div class="meta">
         <div class="name">${htmlEsc(g.name)}</div>
-        ${g.company ? `<div class="company">${htmlEsc(g.company)}</div>` : ""}
+        ${g.stt ? `<div class="company">STT: ${htmlEsc(g.stt)}</div>` : ""}
       </div>
     </div>`;
   })
