@@ -6,12 +6,13 @@
 // =====================================================================
 
 export const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyAHheOCuSAjAhkl2btpzl98kMrAz2sJPQE",
+  authDomain: "viettours-event.firebaseapp.com",
+  projectId: "viettours-event",
+  storageBucket: "viettours-event.firebasestorage.app",
+  messagingSenderId: "1088158917540",
+  appId: "1:1088158917540:web:500db2da61f38da85ed731",
+  measurementId: "G-L010RK7B14",
 };
 
 // Tài khoản nhân viên dùng chung (tạo trong Firebase Auth > Email/Password).
