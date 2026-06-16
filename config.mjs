@@ -6,7 +6,7 @@ export const config = {
   // --- Thông tin sự kiện (hiển thị trên trang web) ---
   eventName: "Kỷ niệm Viettours 25 năm",
   eventSubtitle: "ÂN TÌNH VẠN DẶM",
-  footerNote: "Vui lòng liên hệ hotline số 0919 51 7777 để được hỗ trợ hoặc có yêu cầu đặc biệt về ăn uống.",
+  footerNote: "Quý khách vui lòng xác nhận tham dự để khâu phục vụ được chu đáo. Quý khách có nhu cầu ăn chay xin vui lòng liên hệ hotline 0919 51 7777 trước ngày 25/6 để được hỗ trợ.",
 
   // Hạn chót khách tự bấm "Xác nhận tham dự" trên trang QR. Sau mốc này nút bị KHOÁ.
   // Định dạng ISO kèm múi giờ VN (+07:00). Để "" nếu không giới hạn thời gian.
