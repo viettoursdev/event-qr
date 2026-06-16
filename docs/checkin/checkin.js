@@ -73,6 +73,11 @@ function makeDemoStore() {
       }
       cb(data.slice());
     },
+    async restore(id, fields) {
+      const g = data.find((x) => x.id === id);
+      if (g) Object.assign(g, fields);
+      cb(data.slice());
+    },
     async logout() {},
   };
 }
@@ -118,6 +123,9 @@ async function makeFirebaseStore() {
         confirmedAt: on ? serverTimestamp() : null,
         confirmedVia: on ? "staff" : null,
       });
+    },
+    async restore(id, fields) {
+      await updateDoc(doc(db, collectionName, id), fields);
     },
     async logout() {
       await signOut(auth);
@@ -196,6 +204,13 @@ function enterApp() {
   $("fCfmUndone").addEventListener("click", () => {
     confirmFilter = toggleFilter(confirmFilter, "undone");
     render();
+  });
+  $("btnExport").addEventListener("click", exportBackup);
+  $("btnImport").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) importBackup(f);
+    e.target.value = "";
   });
   $("logoutBtn").addEventListener("click", async () => {
     await store.logout();
@@ -374,6 +389,101 @@ function flash(msg, isError) {
   bar.hidden = false;
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => (bar.hidden = true), 2600);
+}
+
+// ========================================================
+//  EXPORT / IMPORT (backup & khôi phục trạng thái)
+// ========================================================
+const toISO = (t) => {
+  if (!t) return "";
+  const d = t.toDate ? t.toDate() : new Date(t);
+  return isNaN(d) ? "" : d.toISOString();
+};
+
+function exportBackup() {
+  const cols = ["STT", "Tên khách", "Đơn vị", "SĐT", "Số bàn", "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "_checkinAtISO", "_confirmedAtISO"];
+  const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  const list = guests.slice().sort((a, b) => (Number(a.stt) || 0) - (Number(b.stt) || 0));
+  const lines = [cols.join(",")];
+  for (const g of list) {
+    lines.push(
+      [g.stt || "", g.name || "", g.company || "", g.phone || "", g.table || "",
+       g.checkedIn ? "Có" : "Không", g.checkedIn ? fmtTime(g.checkinAt) : "", g.checkedIn ? g.checkinBy || "" : "",
+       g.confirmed ? "Có" : "Không", toISO(g.checkinAt), toISO(g.confirmedAt)].map(q).join(",")
+    );
+  }
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-checkin-${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+  flash(`✓ Đã tải backup ${list.length} khách.`);
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQ = false;
+  text = text.replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+async function importBackup(file) {
+  let rows;
+  try { rows = parseCSV(await file.text()); } catch (_) { return flash("Không đọc được file.", true); }
+  if (rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
+  const h = rows[0].map((x) => x.trim());
+  const I = (name) => h.indexOf(name);
+  const iStt = I("STT"), iChk = I("Đã check-in"), iCfm = I("Đã xác nhận");
+  const iBy = I("Quầy"), iChkAt = I("_checkinAtISO"), iCfmAt = I("_confirmedAtISO");
+  if (iStt < 0 || iChk < 0 || iCfm < 0) return flash("File không đúng định dạng backup (thiếu cột).", true);
+
+  const cur = new Map(guests.map((g) => [String(g.stt), g]));
+  const updates = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || !row[iStt]) continue;
+    const g = cur.get(String(row[iStt]).trim());
+    if (!g) continue; // bỏ STT không có trong danh sách hiện tại
+    const checkedIn = (row[iChk] || "").trim() === "Có";
+    const confirmed = (row[iCfm] || "").trim() === "Có";
+    if (!!g.checkedIn === checkedIn && !!g.confirmed === confirmed) continue; // không đổi -> bỏ
+    const chkISO = iChkAt >= 0 ? (row[iChkAt] || "").trim() : "";
+    const cfmISO = iCfmAt >= 0 ? (row[iCfmAt] || "").trim() : "";
+    updates.push({
+      id: g.id,
+      data: {
+        checkedIn,
+        checkinAt: checkedIn ? (chkISO ? new Date(chkISO) : new Date()) : null,
+        checkinBy: checkedIn ? (iBy >= 0 ? (row[iBy] || "").trim() : "") || station || "backup" : null,
+        confirmed,
+        confirmedAt: confirmed ? (cfmISO ? new Date(cfmISO) : new Date()) : null,
+        confirmedVia: confirmed ? "restore" : null,
+      },
+    });
+  }
+  if (!updates.length) return flash("Không có gì cần khôi phục (trạng thái đã trùng).");
+  if (!confirm(`Khôi phục trạng thái check-in/xác nhận cho ${updates.length} khách từ file backup?`)) return;
+  flash(`Đang khôi phục ${updates.length} khách…`);
+  let ok = 0;
+  for (const u of updates) {
+    try { await store.restore(u.id, u.data); ok++; } catch (_) {}
+  }
+  flash(`✓ Đã khôi phục ${ok}/${updates.length} khách.`, ok < updates.length);
 }
 
 init();
