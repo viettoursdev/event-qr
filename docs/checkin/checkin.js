@@ -27,8 +27,8 @@ function fmtTime(t) {
 // ---------- trạng thái ----------
 let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt, checkinBy, confirmed, _n}]
 let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
-let filterUnconfirmed = false; // chỉ hiện khách chưa xác nhận
-let filterUnchecked = false; // chỉ hiện khách chưa check-in
+let checkinFilter = ""; // "" | "done" | "undone"
+let confirmFilter = ""; // "" | "done" | "undone"
 
 // nhãn quầy/máy hiển thị, suy ra từ email đăng nhập (vd checkin.may04@... -> may04)
 const labelFromEmail = (e) => (e ? (e.split("@")[0].replace(/^checkin\./i, "") || e) : "");
@@ -180,12 +180,21 @@ function enterApp() {
     s.focus();
     render();
   });
-  $("filterUnconfirmed").addEventListener("click", () => {
-    filterUnconfirmed = !filterUnconfirmed;
+  const toggleFilter = (cur, val) => (cur === val ? "" : val);
+  $("fChkDone").addEventListener("click", () => {
+    checkinFilter = toggleFilter(checkinFilter, "done");
     render();
   });
-  $("filterUnchecked").addEventListener("click", () => {
-    filterUnchecked = !filterUnchecked;
+  $("fChkUndone").addEventListener("click", () => {
+    checkinFilter = toggleFilter(checkinFilter, "undone");
+    render();
+  });
+  $("fCfmDone").addEventListener("click", () => {
+    confirmFilter = toggleFilter(confirmFilter, "done");
+    render();
+  });
+  $("fCfmUndone").addEventListener("click", () => {
+    confirmFilter = toggleFilter(confirmFilter, "undone");
     render();
   });
   $("logoutBtn").addEventListener("click", async () => {
@@ -207,16 +216,19 @@ function onData(arr) {
     }))
     .sort((a, b) => (a.stt || 0) - (b.stt || 0));
   const done = guests.filter((g) => g.checkedIn).length;
+  const conf = guests.filter((g) => g.confirmed).length;
   $("countDone").textContent = done;
   $("countTotal").textContent = guests.length;
   const cf = $("countConfirm");
-  if (cf) cf.textContent = guests.filter((g) => g.confirmed).length;
-  const unconf = guests.filter((g) => !g.confirmed).length;
-  const chip = $("chipCount");
-  if (chip) chip.textContent = unconf ? `(${unconf})` : "";
-  const unchecked = guests.length - done;
-  const chipC = $("chipCountCheckin");
-  if (chipC) chipC.textContent = unchecked ? `(${unchecked})` : "";
+  if (cf) cf.textContent = conf;
+  const setChip = (id, n) => {
+    const el = $(id);
+    if (el) el.textContent = `(${n})`;
+  };
+  setChip("cChkDone", done);
+  setChip("cChkUndone", guests.length - done);
+  setChip("cCfmDone", conf);
+  setChip("cCfmUndone", guests.length - conf);
   render();
 }
 
@@ -242,14 +254,16 @@ function render() {
   const q = $("search").value;
   $("clearSearch").hidden = !q;
   const box = $("results");
-  $("filterUnconfirmed").classList.toggle("active", filterUnconfirmed);
-  $("filterUnchecked").classList.toggle("active", filterUnchecked);
-  const anyFilter = filterUnconfirmed || filterUnchecked;
+  $("fChkDone").classList.toggle("active", checkinFilter === "done");
+  $("fChkUndone").classList.toggle("active", checkinFilter === "undone");
+  $("fCfmDone").classList.toggle("active", confirmFilter === "done");
+  $("fCfmUndone").classList.toggle("active", confirmFilter === "undone");
+  const anyFilter = checkinFilter || confirmFilter;
 
   // nhãn các bộ lọc đang bật
   const fl = [];
-  if (filterUnchecked) fl.push("chưa check-in");
-  if (filterUnconfirmed) fl.push("chưa xác nhận");
+  if (checkinFilter) fl.push(checkinFilter === "done" ? "đã check-in" : "chưa check-in");
+  if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
 
   let list;
   if (q.trim()) {
@@ -261,8 +275,8 @@ function render() {
     return;
   }
 
-  if (filterUnchecked) list = list.filter((g) => !g.checkedIn);
-  if (filterUnconfirmed) list = list.filter((g) => !g.confirmed);
+  if (checkinFilter) list = list.filter((g) => (checkinFilter === "done" ? g.checkedIn : !g.checkedIn));
+  if (confirmFilter) list = list.filter((g) => (confirmFilter === "done" ? g.confirmed : !g.confirmed));
 
   if (list.length === 0) {
     const empty = q.trim() ? `Không tìm thấy khách phù hợp với “${esc(q)}”.` : "Không có khách nào khớp bộ lọc. 🎉";

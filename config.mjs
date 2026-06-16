@@ -27,6 +27,7 @@ export const config = {
   // Chỉ "name" bắt buộc. "table" có thể để trống lúc đầu, điền sau cũng được.
   columns: {
     name: "TÊN KHÁCH MỜI", // bắt buộc
+    title: "DANH XƯNG",    // tùy chọn — danh xưng (Ông/Bà) hiển thị trước tên
     company: "ĐƠN VỊ",     // tùy chọn — hiển thị dưới tên; để "" nếu không có
     table: "SỐ BÀN",       // có thể bỏ trống lúc xuất QR, cập nhật sau
   },

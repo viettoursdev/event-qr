@@ -41,7 +41,7 @@
       <div class="event">${esc(cfg.eventName || "")}</div>
       <div class="subtitle">${esc(cfg.eventSubtitle || "")}</div>
       <div class="greeting">Kính chào</div>
-      <h1 class="name">${esc(g.name || "Quý khách")}</h1>
+      <h1 class="name">${g.title ? `<span class="honorific">${esc(g.title)}</span> ` : ""}${esc(g.name || "Quý khách")}</h1>
       ${g.company ? `<div class="company">${esc(g.company)}</div>` : ""}
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}

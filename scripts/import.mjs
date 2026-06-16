@@ -53,7 +53,7 @@ console.log(`\n📄 Đọc sheet "${sheetName}" — ${rows.length} dòng.`);
 console.log(`   Các cột phát hiện: ${headers.map((h) => `"${h}"`).join(", ")}`);
 
 // --- Kiểm tra cột ---
-const { name: nameCol, company: companyCol, table: tableCol } = config.columns;
+const { name: nameCol, company: companyCol, table: tableCol, title: titleCol } = config.columns;
 if (!headers.includes(nameCol)) {
   fail(
     `Không thấy cột "${nameCol}" (cấu hình cho "name") trong Excel.\n` +
@@ -72,7 +72,7 @@ if (idColumn && !headers.includes(idColumn))
 
 function get(row, key) {
   // key là tên logic (name/company/table) -> map sang cột Excel
-  const colMap = { name: nameCol, company: companyCol, table: tableCol };
+  const colMap = { name: nameCol, company: companyCol, table: tableCol, title: titleCol };
   const col = colMap[key] || key;
   return String(row[col] ?? "").trim();
 }
@@ -130,12 +130,14 @@ for (const row of rows) {
   const name = get(row, "name");
   const company = companyCol ? get(row, "company") : "";
   const table = tableCol && headers.includes(tableCol) ? get(row, "table") : "";
+  const title = titleCol && headers.includes(titleCol) ? get(row, "title") : "";
   if (!name) blankNames++;
   if (!table) blankTables++;
 
   // Dữ liệu CÔNG KHAI cho web
   const stt = idColumn ? String(row[idColumn] ?? "").trim() : "";
   const pub = { name };
+  if (title) pub.title = title;
   if (company) pub.company = company;
   if (stt) pub.stt = stt;
   pub.table = table; // có thể rỗng -> web hiển thị "Đang cập nhật"
@@ -145,6 +147,7 @@ for (const row of rows) {
     token,
     url: config.baseUrl.replace(/\/?$/, "/") + "#" + token,
     stt,
+    title,
     name,
     company,
     table,

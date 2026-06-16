@@ -47,6 +47,7 @@ let n = 0,
 let batch = db.batch();
 for (const g of guests) {
   const data = { name: g.name || "", table: g.table || "" };
+  if (g.title) data.title = g.title;
   if (g.company) data.company = g.company;
   if (g.stt) data.stt = g.stt;
   batch.set(db.collection(COL).doc(g.token), data);
