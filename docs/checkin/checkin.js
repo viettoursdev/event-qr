@@ -26,16 +26,20 @@ function fmtTime(t) {
 
 // ---------- trạng thái ----------
 let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt, checkinBy, confirmed, _n}]
-let station = localStorage.getItem("checkin.station") || "";
 let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
 let filterUnconfirmed = false; // chỉ hiện khách chưa xác nhận
 let filterUnchecked = false; // chỉ hiện khách chưa check-in
+
+// nhãn quầy/máy hiển thị, suy ra từ email đăng nhập (vd checkin.may04@... -> may04)
+const labelFromEmail = (e) => (e ? (e.split("@")[0].replace(/^checkin\./i, "") || e) : "");
+let loginEmail = localStorage.getItem("checkin.email") || "";
+let station = labelFromEmail(loginEmail);
 
 // ---------- khởi tạo ----------
 $("eventName").textContent = eventName;
 $("brandName").textContent = eventName;
 if (DEMO) $("demoNote").hidden = false;
-if (station) $("station").value = station;
+if (loginEmail) $("station").value = loginEmail;
 
 // ========================================================
 //  LỚP DỮ LIỆU
@@ -46,7 +50,7 @@ function makeDemoStore() {
   return {
     async login() {
       return true;
-    }, // demo: chấp nhận mọi PIN
+    }, // demo: chấp nhận mọi tài khoản
     subscribe(fn) {
       cb = fn;
       fn(data.slice());
@@ -90,8 +94,8 @@ async function makeFirebaseStore() {
     onAuth(fn) {
       onAuthStateChanged(auth, (u) => fn(!!u));
     },
-    async login(pin) {
-      await signInWithEmailAndPassword(auth, staffEmail, pin);
+    async login(email, pin) {
+      await signInWithEmailAndPassword(auth, email, pin);
       return true;
     },
     subscribe(fn) {
@@ -140,17 +144,21 @@ async function init() {
 
 async function doLogin() {
   const pin = $("pin").value.trim();
-  station = $("station").value.trim();
+  loginEmail = $("station").value.trim();
+  station = labelFromEmail(loginEmail);
   $("loginError").textContent = "";
-  if (!station) return ($("loginError").textContent = "Vui lòng nhập tên quầy/máy.");
-  if (!pin) return ($("loginError").textContent = "Vui lòng nhập mã nhân viên.");
-  localStorage.setItem("checkin.station", station);
+  if (!loginEmail) return ($("loginError").textContent = "Vui lòng nhập email tài khoản máy.");
+  if (!pin) return ($("loginError").textContent = "Vui lòng nhập mật khẩu.");
+  localStorage.setItem("checkin.email", loginEmail);
   $("loginBtn").disabled = true;
   try {
-    await store.login(pin);
+    await store.login(loginEmail, pin);
     if (DEMO) enterApp();
   } catch (e) {
-    $("loginError").textContent = "Mã không đúng. Vui lòng thử lại.";
+    const code = (e && e.code) || "";
+    $("loginError").textContent = /user-not-found|invalid-email/.test(code)
+      ? "Email tài khoản không tồn tại. Kiểm tra lại."
+      : "Email hoặc mật khẩu không đúng. Vui lòng thử lại.";
   } finally {
     $("loginBtn").disabled = false;
   }
