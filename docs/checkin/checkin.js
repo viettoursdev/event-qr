@@ -1,4 +1,4 @@
-import { firebaseConfig, eventName, demoGuests, collectionName } from "./config.js";
+import { firebaseConfig, eventName, demoGuests, collectionName } from "./config.js?v=2";
 
 const DEMO = !firebaseConfig || !firebaseConfig.apiKey;
 const SDK = "https://www.gstatic.com/firebasejs/10.12.0";
