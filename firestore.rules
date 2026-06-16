@@ -1,28 +1,36 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Danh sách khách + trạng thái check-in / xác nhận
-    match /guests/{id} {
-      // Nhân viên = đăng nhập bằng Email/Password
-      function isStaff() {
-        return request.auth != null
-          && request.auth.token.firebase.sign_in_provider == 'password';
-      }
-      function changed() {
-        return request.resource.data.diff(resource.data).affectedKeys();
-      }
+// =====================================================================
+//  RULES SỰ KIỆN — 2 block cần CHÈN THÊM vào Firestore Rules của project
+//  tour-cost-calculator-4336c (KHÔNG xoá rules app tính giá).
+//  Đặt 2 block này BÊN TRONG: match /databases/{database}/documents { ... }
+//  ⚠️ App tính giá tự deploy rules riêng -> nên thêm 2 block này vào
+//     firestore.rules của REPO app tính giá để mỗi lần deploy đều giữ.
+// =====================================================================
 
-      // Chỉ nhân viên đọc được (bảo vệ SĐT) — khách ẩn danh KHÔNG đọc được danh sách
-      allow read: if isStaff();
-
-      allow update: if
-        // Nhân viên: sửa trường check-in và/hoặc xác nhận (xác nhận hộ khách)
-        (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia']))
-        // Khách (đăng nhập ẩn danh từ trang QR): chỉ sửa 3 trường xác nhận
-        || (request.auth != null && changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia']));
-
-      // Thêm/xoá khách chỉ làm qua script admin (bỏ qua rules)
-      allow create, delete: if false;
-    }
+// event_guests: danh sách khách + check-in/xác nhận (check-in app đọc)
+match /event_guests/{id} {
+  function isStaff() {
+    return request.auth != null
+      && request.auth.token.firebase.sign_in_provider == 'password';
   }
+  function changed() {
+    return request.resource.data.diff(resource.data).affectedKeys();
+  }
+
+  // Chỉ nhân viên (đăng nhập Email/Password) đọc được — bảo vệ SĐT
+  allow read: if isStaff();
+
+  allow update: if
+    // Nhân viên: sửa trường check-in và/hoặc xác nhận (xác nhận hộ khách)
+    (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia']))
+    // Khách từ trang QR: chỉ sửa 3 trường xác nhận (KHÔNG cần đăng nhập)
+    || changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia']);
+
+  // Thêm/xoá khách chỉ qua script admin (bỏ qua rules)
+  allow create, delete: if false;
+}
+
+// event_public: dữ liệu hiển thị cho trang QR (tên/công ty/STT/bàn — KHÔNG SĐT)
+match /event_public/{token} {
+  allow get: if true;            // đọc 1 doc theo token (ai có QR riêng)
+  allow list, write: if false;   // CẤM liệt kê + cấm ghi từ client
 }

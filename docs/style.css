@@ -191,6 +191,16 @@ body {
   text-decoration: underline;
   cursor: pointer;
 }
+.confirm-err {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fcdcd7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.4;
+}
 .confirm-closed {
   font-size: 15px;
   font-weight: 700;

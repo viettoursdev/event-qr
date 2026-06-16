@@ -60,9 +60,8 @@
     if (!firebaseConfig || !firebaseConfig.apiKey) return (_fb = null);
     const { initializeApp } = await import(`${SDK}/firebase-app.js`);
     const { getFirestore, doc, getDoc, setDoc, serverTimestamp } = await import(`${SDK}/firebase-firestore.js`);
-    const { getAuth, signInAnonymously } = await import(`${SDK}/firebase-auth.js`);
     const app = initializeApp(firebaseConfig, "guest");
-    _fb = { db: getFirestore(app), doc, getDoc, setDoc, serverTimestamp, auth: getAuth(app), signInAnonymously, collectionName };
+    _fb = { db: getFirestore(app), doc, getDoc, setDoc, serverTimestamp, collectionName };
     return _fb;
   }
 
@@ -75,13 +74,9 @@
   }
 
   async function remoteConfirm(stt, on) {
-    if (!stt) return;
+    if (!stt) throw new Error("no-stt");
     const fb = await loadFb();
-    if (!fb) return; // chưa cấu hình
-    if (!fb._authed) {
-      await fb.signInAnonymously(fb.auth);
-      fb._authed = true;
-    }
+    if (!fb) throw new Error("not-configured");
     await fb.setDoc(
       fb.doc(fb.db, fb.collectionName, String(stt)),
       { confirmed: on, confirmedAt: on ? fb.serverTimestamp() : null, confirmedVia: "qr" },
@@ -117,14 +112,24 @@
 
     async function setConfirm(on) {
       if (closed) return; // hết hạn -> khoá thao tác
-      confirmed = on;
+      const btn = area.querySelector("button");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Đang lưu…";
+      }
+      try {
+        await remoteConfirm(g.stt, on); // ghi Firestore trước
+      } catch (e) {
+        paint(); // khôi phục nút
+        area.insertAdjacentHTML(
+          "beforeend",
+          `<div class="confirm-err">Chưa lưu được. Vui lòng kiểm tra mạng và thử lại, hoặc liên hệ lễ tân.</div>`
+        );
+        return;
+      }
+      confirmed = on; // chỉ đổi trạng thái khi đã lưu thành công
       localStorage.setItem(key, on ? "1" : "0");
       paint();
-      try {
-        await remoteConfirm(g.stt, on);
-      } catch (_) {
-        /* đã lưu cục bộ; bỏ qua lỗi mạng */
-      }
     }
     function paint() {
       if (confirmed) {
