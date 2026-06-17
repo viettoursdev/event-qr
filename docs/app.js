@@ -118,7 +118,7 @@
       paint();
     }
     function paint() {
-      area.innerHTML = `<button type="button" class="veg-btn${veg ? " on" : ""}">${veg ? "✓ Ăn chay" : "🥗 Tôi ăn chay"}</button>`;
+      area.innerHTML = `<button type="button" class="veg-btn${veg ? " on" : ""}">${veg ? "✓ Đã xác nhận ăn chay" : "🥗 Xác nhận ăn chay"}</button>`;
       area.querySelector(".veg-btn").onclick = () => setVeg(!veg);
     }
     paint();
