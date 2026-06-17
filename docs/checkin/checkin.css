@@ -120,6 +120,8 @@ body {
 .meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; color: #3f6062; margin-top: 6px; }
 .meta b { color: var(--teal-dark); }
 .ci-info { font-size: 12.5px; color: var(--ok); margin-top: 5px; font-weight: 600; }
+.activity { margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+.activity div { display: flex; flex-wrap: wrap; gap: 2px 6px; }
 .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .badge.ok { background: var(--ok); color: #fff; }
 .badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }

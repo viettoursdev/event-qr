@@ -75,7 +75,7 @@ function makeDemoStore() {
       if (g) {
         g.confirmed = on;
         g.confirmedAt = on ? new Date() : null;
-        g.confirmedVia = on ? "staff" : null;
+        g.confirmedVia = on ? station : null;
       }
       cb(data.slice());
     },
@@ -84,7 +84,7 @@ function makeDemoStore() {
       if (g) {
         g.vegetarian = on;
         g.vegetarianAt = on ? new Date() : null;
-        g.vegetarianVia = on ? "staff" : null;
+        g.vegetarianVia = on ? station : null;
       }
       cb(data.slice());
     },
@@ -146,14 +146,14 @@ async function makeFirebaseStore() {
       await updateDoc(doc(db, collectionName, id), {
         confirmed: on,
         confirmedAt: on ? serverTimestamp() : null,
-        confirmedVia: on ? "staff" : null,
+        confirmedVia: on ? station : null, // ghi máy lễ tân thao tác
       });
     },
     async setVegetarian(id, on) {
       await updateDoc(doc(db, collectionName, id), {
         vegetarian: on,
         vegetarianAt: on ? serverTimestamp() : null,
-        vegetarianVia: "staff",
+        vegetarianVia: on ? station : null, // ghi máy lễ tân thao tác
       });
     },
     async restore(id, fields) {
@@ -466,6 +466,18 @@ function renderDashboard() {
   return `<div class="dashboard">${cards}<div class="dash-subhead">Số lượng khách theo bàn</div>${tbl}</div>`;
 }
 
+function viaLabel(v) {
+  return v === "qr" ? "khách (QR)" : v ? esc(v) : "—";
+}
+// Log hoạt động: giờ + máy thao tác cho check-in / xác nhận / ăn chay
+function activityLog(g) {
+  const lines = [];
+  if (g.checkedIn) lines.push(`✓ Check-in · ${fmtTime(g.checkinAt) || "—"}${g.checkinBy ? " · 🖥 " + esc(g.checkinBy) : ""}`);
+  if (g.confirmed) lines.push(`✓ Xác nhận · ${fmtTime(g.confirmedAt) || "—"} · 🖥 ${viaLabel(g.confirmedVia)}`);
+  if (g.vegetarian) lines.push(`🥗 Ăn chay · ${fmtTime(g.vegetarianAt) || "—"} · 🖥 ${viaLabel(g.vegetarianVia)}`);
+  return lines.length ? `<div class="activity">${lines.map((l) => `<div>${l}</div>`).join("")}</div>` : "";
+}
+
 function confirmBadge(g) {
   return g.confirmed
     ? `<span class="badge confirm-yes">✓ Đã xác nhận</span>`
@@ -491,9 +503,6 @@ function card(g) {
   const ciBtn = g.checkedIn
     ? `<button class="btn-undo" data-undo="${esc(g.id)}"${dis("checkin")}>Hoàn tác</button>`
     : `<button class="btn-checkin" data-checkin="${esc(g.id)}"${dis("checkin")}>Check-in</button>`;
-  const ciInfo = g.checkedIn
-    ? `<div class="ci-info">Lúc ${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + esc(g.checkinBy) : ""}</div>`
-    : "";
   const ciTag = g.checkedIn ? `<span class="badge ok">✓ Đã check-in</span> ` : "";
   const vegTag = g.vegetarian ? ` <span class="badge veg-yes">🥗 Ăn chay</span>` : "";
   return `<div class="card${g.checkedIn ? " done" : ""}">
@@ -501,7 +510,7 @@ function card(g) {
       <div class="name">${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}</div>
       <div class="sub">${esc(g.company || "")}</div>
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
-      ${ciInfo}
+      ${activityLog(g)}
     </div>
     <div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}</div>
   </div>`;
