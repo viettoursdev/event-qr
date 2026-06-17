@@ -108,6 +108,31 @@ body {
 .badge.ok { background: var(--ok); color: #fff; }
 .badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }
 .badge.confirm-no { background: #fef3f2; color: #b42318; border: 1px solid #fcdcd7; }
+.badge.veg-yes { background: #ecfdf3; color: #15803d; border: 1px solid #bbf7d0; }
+
+/* ---------- Nút ăn chay (lễ tân) ---------- */
+.btn-veg {
+  padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  color: #15803d; background: #fff; border: 1.5px solid #86efac; border-radius: 10px;
+}
+.btn-veg:active { transform: scale(.97); }
+.btn-veg.on { color: var(--muted); background: #fff; border-color: var(--line); font-weight: 600; }
+.btn-checkin[disabled], .btn-undo[disabled], .btn-confirm[disabled], .btn-veg[disabled] {
+  opacity: .45; cursor: not-allowed; filter: grayscale(0.3);
+}
+
+/* ---------- Bảng Admin ---------- */
+.adminbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 16px; background: #fff7ed; border-bottom: 1px solid #fed7aa;
+  position: sticky; top: 54px; z-index: 4;
+}
+.adminbar-label { font-size: 13px; font-weight: 700; color: #9a3412; }
+.lockbtn {
+  font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  background: #fff; color: #166534; border: 1.5px solid #86efac;
+}
+.lockbtn.locked { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
 
 .card-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: stretch; }
 .btn-confirm {

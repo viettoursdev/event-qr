@@ -46,8 +46,10 @@
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}
       <div class="confirm-area" id="confirmArea"></div>
+      <div class="veg-area" id="vegArea"></div>
     `);
     setupConfirm(g, cfg);
+    setupVeg(g);
   }
 
   // ----- Firebase: đọc thông tin khách (event_public) + ghi xác nhận (event_guests) -----
@@ -82,6 +84,44 @@
       { confirmed: on, confirmedAt: on ? fb.serverTimestamp() : null, confirmedVia: "qr" },
       { merge: true }
     );
+  }
+
+  async function remoteVeg(stt, on) {
+    if (!stt) throw new Error("no-stt");
+    const fb = await loadFb();
+    if (!fb) throw new Error("not-configured");
+    await fb.setDoc(
+      fb.doc(fb.db, fb.collectionName, String(stt)),
+      { vegetarian: on, vegetarianAt: on ? fb.serverTimestamp() : null, vegetarianVia: "qr" },
+      { merge: true }
+    );
+  }
+
+  function setupVeg(g) {
+    const area = document.getElementById("vegArea");
+    if (!area) return;
+    const key = "vt.veg." + getToken();
+    let veg = localStorage.getItem(key) === "1";
+
+    async function setVeg(on) {
+      const btn = area.querySelector("button");
+      if (btn) btn.disabled = true;
+      try {
+        await remoteVeg(g.stt, on);
+      } catch (e) {
+        paint();
+        area.insertAdjacentHTML("beforeend", `<div class="confirm-err">Chưa lưu được, vui lòng thử lại.</div>`);
+        return;
+      }
+      veg = on;
+      localStorage.setItem(key, on ? "1" : "0");
+      paint();
+    }
+    function paint() {
+      area.innerHTML = `<button type="button" class="veg-btn${veg ? " on" : ""}">${veg ? "✓ Ăn chay" : "🥗 Tôi ăn chay"}</button>`;
+      area.querySelector(".veg-btn").onclick = () => setVeg(!veg);
+    }
+    paint();
   }
 
   function fmtDeadline(ms) {

@@ -29,6 +29,11 @@ let guests = []; // [{id, stt, name, company, phone, table, checkedIn, checkinAt
 let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
 let checkinFilter = ""; // "" | "done" | "undone"
 let confirmFilter = ""; // "" | "done" | "undone"
+let vegFilter = false; // chỉ hiện khách ăn chay
+const ADMIN_EMAIL = "checkin.admin@viettours.local";
+let isAdmin = false;
+let locks = { checkin: false, confirm: false, vegetarian: false }; // Admin khoá thao tác của Operations
+const lockedFor = (f) => locks[f] && !isAdmin; // Operations bị chặn nếu Admin khoá
 
 // nhãn quầy/máy hiển thị, suy ra từ email đăng nhập (vd checkin.may04@... -> may04)
 const labelFromEmail = (e) => (e ? (e.split("@")[0].replace(/^checkin\./i, "") || e) : "");
@@ -73,14 +78,33 @@ function makeDemoStore() {
       }
       cb(data.slice());
     },
+    async setVegetarian(id, on) {
+      const g = data.find((x) => x.id === id);
+      if (g) {
+        g.vegetarian = on;
+        g.vegetarianAt = on ? new Date() : null;
+        g.vegetarianVia = on ? "staff" : null;
+      }
+      cb(data.slice());
+    },
     async restore(id, fields) {
       const g = data.find((x) => x.id === id);
       if (g) Object.assign(g, fields);
       cb(data.slice());
     },
+    subscribeConfig(fn) {
+      demoLocksCb = fn;
+      fn(demoLocks);
+    },
+    async setLocks(obj) {
+      Object.assign(demoLocks, obj);
+      demoLocksCb({ ...demoLocks });
+    },
     async logout() {},
   };
 }
+const demoLocks = { checkin: false, confirm: false, vegetarian: false };
+let demoLocksCb = () => {};
 
 async function makeFirebaseStore() {
   const { initializeApp } = await import(`${SDK}/firebase-app.js`);
@@ -124,8 +148,21 @@ async function makeFirebaseStore() {
         confirmedVia: on ? "staff" : null,
       });
     },
+    async setVegetarian(id, on) {
+      await updateDoc(doc(db, collectionName, id), {
+        vegetarian: on,
+        vegetarianAt: on ? serverTimestamp() : null,
+        vegetarianVia: "staff",
+      });
+    },
     async restore(id, fields) {
       await updateDoc(doc(db, collectionName, id), fields);
+    },
+    subscribeConfig(fn) {
+      onSnapshot(doc(db, "event_config", "locks"), (snap) => fn(snap.exists() ? snap.data() : {}));
+    },
+    async setLocks(obj) {
+      await updateDoc(doc(db, "event_config", "locks"), obj);
     },
     async logout() {
       await signOut(auth);
@@ -158,6 +195,7 @@ async function doLogin() {
   if (!loginEmail) return ($("loginError").textContent = "Vui lòng nhập email tài khoản máy.");
   if (!pin) return ($("loginError").textContent = "Vui lòng nhập mật khẩu.");
   localStorage.setItem("checkin.email", loginEmail);
+  isAdmin = loginEmail.toLowerCase() === ADMIN_EMAIL;
   $("loginBtn").disabled = true;
   try {
     await store.login(loginEmail, pin);
@@ -176,10 +214,17 @@ let entered = false;
 function enterApp() {
   if (entered) return;
   entered = true;
+  isAdmin = loginEmail.toLowerCase() === ADMIN_EMAIL; // cũng đúng khi tự vào lại phiên cũ
   $("login").hidden = true;
   $("app").hidden = false;
   $("stationTag").textContent = station || "—";
+  if (isAdmin) {
+    $("adminBar").hidden = false;
+    $("stationTag").textContent = station + " · ADMIN";
+  }
   store.subscribe(onData);
+  if (store.subscribeConfig) store.subscribeConfig(onLocks);
+  bindAdminBar();
   const s = $("search");
   s.addEventListener("input", render);
   $("clearSearch").addEventListener("click", () => {
@@ -205,6 +250,10 @@ function enterApp() {
     confirmFilter = toggleFilter(confirmFilter, "undone");
     render();
   });
+  $("fVeg").addEventListener("click", () => {
+    vegFilter = !vegFilter;
+    render();
+  });
   $("btnExport").addEventListener("click", exportBackup);
   $("btnImport").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", (e) => {
@@ -217,6 +266,36 @@ function enterApp() {
     location.reload();
   });
   setTimeout(() => s.focus(), 100);
+}
+
+// ---------- Khoá thao tác (Admin điều khiển, Operations tuân theo) ----------
+function onLocks(l) {
+  locks = {
+    checkin: !!(l && l.checkin),
+    confirm: !!(l && l.confirm),
+    vegetarian: !!(l && l.vegetarian),
+  };
+  updateAdminBar();
+  render();
+}
+function updateAdminBar() {
+  const set = (id, feat, label) => {
+    const b = $(id);
+    if (!b) return;
+    const on = locks[feat];
+    b.textContent = `${label}: ${on ? "🔒 Đang khoá" : "🔓 Đang mở"}`;
+    b.classList.toggle("locked", on);
+  };
+  set("lockCheckin", "checkin", "Check-in");
+  set("lockConfirm", "confirm", "Xác nhận");
+  set("lockVeg", "vegetarian", "Ăn chay");
+}
+function bindAdminBar() {
+  if (!isAdmin) return;
+  const tog = (feat) => () => store.setLocks && store.setLocks({ [feat]: !locks[feat] });
+  $("lockCheckin").addEventListener("click", tog("checkin"));
+  $("lockConfirm").addEventListener("click", tog("confirm"));
+  $("lockVeg").addEventListener("click", tog("vegetarian"));
 }
 
 // ========================================================
@@ -244,6 +323,7 @@ function onData(arr) {
   setChip("cChkUndone", guests.length - done);
   setChip("cCfmDone", conf);
   setChip("cCfmUndone", guests.length - conf);
+  setChip("cVeg", guests.filter((g) => g.vegetarian).length);
   render();
 }
 
@@ -273,12 +353,14 @@ function render() {
   $("fChkUndone").classList.toggle("active", checkinFilter === "undone");
   $("fCfmDone").classList.toggle("active", confirmFilter === "done");
   $("fCfmUndone").classList.toggle("active", confirmFilter === "undone");
-  const anyFilter = checkinFilter || confirmFilter;
+  $("fVeg").classList.toggle("active", vegFilter);
+  const anyFilter = checkinFilter || confirmFilter || vegFilter;
 
   // nhãn các bộ lọc đang bật
   const fl = [];
   if (checkinFilter) fl.push(checkinFilter === "done" ? "đã check-in" : "chưa check-in");
   if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
+  if (vegFilter) fl.push("ăn chay");
 
   let list;
   if (q.trim()) {
@@ -292,6 +374,7 @@ function render() {
 
   if (checkinFilter) list = list.filter((g) => (checkinFilter === "done" ? g.checkedIn : !g.checkedIn));
   if (confirmFilter) list = list.filter((g) => (confirmFilter === "done" ? g.confirmed : !g.confirmed));
+  if (vegFilter) list = list.filter((g) => g.vegetarian);
 
   if (list.length === 0) {
     const empty = q.trim() ? `Không tìm thấy khách phù hợp với “${esc(q)}”.` : "Không có khách nào khớp bộ lọc. 🎉";
@@ -322,6 +405,12 @@ function render() {
   box.querySelectorAll("[data-unconfirm]").forEach((btn) =>
     btn.addEventListener("click", () => toggleConfirm(btn.getAttribute("data-unconfirm"), false))
   );
+  box.querySelectorAll("[data-veg]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleVeg(btn.getAttribute("data-veg"), true))
+  );
+  box.querySelectorAll("[data-unveg]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleVeg(btn.getAttribute("data-unveg"), false))
+  );
 }
 
 function confirmBadge(g) {
@@ -329,35 +418,44 @@ function confirmBadge(g) {
     ? `<span class="badge confirm-yes">✓ Đã xác nhận</span>`
     : `<span class="badge confirm-no">Chưa xác nhận</span>`;
 }
+// thuộc tính disabled nếu Admin đang khoá tính năng (chỉ áp dụng cho Operations)
+const dis = (f) => (lockedFor(f) ? ' disabled title="Admin đang khoá tính năng này"' : "");
 
 function confirmBtn(g) {
   return g.confirmed
-    ? `<button class="btn-confirm on" data-unconfirm="${esc(g.id)}">Bỏ xác nhận</button>`
-    : `<button class="btn-confirm" data-confirm="${esc(g.id)}">Xác nhận</button>`;
+    ? `<button class="btn-confirm on" data-unconfirm="${esc(g.id)}"${dis("confirm")}>Bỏ xác nhận</button>`
+    : `<button class="btn-confirm" data-confirm="${esc(g.id)}"${dis("confirm")}>Xác nhận</button>`;
+}
+function vegBtn(g) {
+  return g.vegetarian
+    ? `<button class="btn-veg on" data-unveg="${esc(g.id)}"${dis("vegetarian")}>Bỏ ăn chay</button>`
+    : `<button class="btn-veg" data-veg="${esc(g.id)}"${dis("vegetarian")}>Ăn chay</button>`;
 }
 
 function card(g) {
   const phone = g.phone ? esc(g.phone) : "—";
   const table = g.table ? `Bàn ${esc(g.table)}` : "Chưa xếp bàn";
   const ciBtn = g.checkedIn
-    ? `<button class="btn-undo" data-undo="${esc(g.id)}">Hoàn tác</button>`
-    : `<button class="btn-checkin" data-checkin="${esc(g.id)}">Check-in</button>`;
+    ? `<button class="btn-undo" data-undo="${esc(g.id)}"${dis("checkin")}>Hoàn tác</button>`
+    : `<button class="btn-checkin" data-checkin="${esc(g.id)}"${dis("checkin")}>Check-in</button>`;
   const ciInfo = g.checkedIn
     ? `<div class="ci-info">Lúc ${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + esc(g.checkinBy) : ""}</div>`
     : "";
   const ciTag = g.checkedIn ? `<span class="badge ok">✓ Đã check-in</span> ` : "";
+  const vegTag = g.vegetarian ? ` <span class="badge veg-yes">🥗 Ăn chay</span>` : "";
   return `<div class="card${g.checkedIn ? " done" : ""}">
     <div class="card-main">
-      <div class="name">${esc(g.name)} ${ciTag}${confirmBadge(g)}</div>
+      <div class="name">${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}</div>
       <div class="sub">${esc(g.company || "")}</div>
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
       ${ciInfo}
     </div>
-    <div class="card-actions">${confirmBtn(g)}${ciBtn}</div>
+    <div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}</div>
   </div>`;
 }
 
 async function toggleCheckin(id, on) {
+  if (lockedFor("checkin")) return flash("Chức năng check-in đang bị Admin khoá.", true);
   const g = guests.find((x) => x.id === id);
   if (on && g && g.checkedIn) {
     flash(`${g.name} đã được check-in trước đó (${fmtTime(g.checkinAt)}${g.checkinBy ? " · " + g.checkinBy : ""}).`);
@@ -371,7 +469,19 @@ async function toggleCheckin(id, on) {
   }
 }
 
+async function toggleVeg(id, on) {
+  if (lockedFor("vegetarian")) return flash("Chức năng ăn chay đang bị Admin khoá.", true);
+  const g = guests.find((x) => x.id === id);
+  try {
+    await store.setVegetarian(id, on);
+    if (g) flash(on ? `🥗 Đã đánh dấu ăn chay: ${g.name}` : `Đã bỏ ăn chay: ${g.name}`);
+  } catch (e) {
+    flash("Lỗi khi lưu, vui lòng thử lại.", true);
+  }
+}
+
 async function toggleConfirm(id, on) {
+  if (lockedFor("confirm")) return flash("Chức năng xác nhận đang bị Admin khoá.", true);
   const g = guests.find((x) => x.id === id);
   try {
     await store.setConfirm(id, on);
@@ -401,7 +511,7 @@ const toISO = (t) => {
 };
 
 function exportBackup() {
-  const cols = ["STT", "Tên khách", "Đơn vị", "SĐT", "Số bàn", "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "_checkinAtISO", "_confirmedAtISO"];
+  const cols = ["STT", "Tên khách", "Đơn vị", "SĐT", "Số bàn", "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "Ăn chay", "_checkinAtISO", "_confirmedAtISO"];
   const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
   const list = guests.slice().sort((a, b) => (Number(a.stt) || 0) - (Number(b.stt) || 0));
   const lines = [cols.join(",")];
@@ -409,7 +519,7 @@ function exportBackup() {
     lines.push(
       [g.stt || "", g.name || "", g.company || "", g.phone || "", g.table || "",
        g.checkedIn ? "Có" : "Không", g.checkedIn ? fmtTime(g.checkinAt) : "", g.checkedIn ? g.checkinBy || "" : "",
-       g.confirmed ? "Có" : "Không", toISO(g.checkinAt), toISO(g.confirmedAt)].map(q).join(",")
+       g.confirmed ? "Có" : "Không", g.vegetarian ? "Có" : "Không", toISO(g.checkinAt), toISO(g.confirmedAt)].map(q).join(",")
     );
   }
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -448,7 +558,7 @@ async function importBackup(file) {
   if (rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
   const h = rows[0].map((x) => x.trim());
   const I = (name) => h.indexOf(name);
-  const iStt = I("STT"), iChk = I("Đã check-in"), iCfm = I("Đã xác nhận");
+  const iStt = I("STT"), iChk = I("Đã check-in"), iCfm = I("Đã xác nhận"), iVeg = I("Ăn chay");
   const iBy = I("Quầy"), iChkAt = I("_checkinAtISO"), iCfmAt = I("_confirmedAtISO");
   if (iStt < 0 || iChk < 0 || iCfm < 0) return flash("File không đúng định dạng backup (thiếu cột).", true);
 
@@ -461,7 +571,8 @@ async function importBackup(file) {
     if (!g) continue; // bỏ STT không có trong danh sách hiện tại
     const checkedIn = (row[iChk] || "").trim() === "Có";
     const confirmed = (row[iCfm] || "").trim() === "Có";
-    if (!!g.checkedIn === checkedIn && !!g.confirmed === confirmed) continue; // không đổi -> bỏ
+    const vegetarian = iVeg >= 0 ? (row[iVeg] || "").trim() === "Có" : !!g.vegetarian;
+    if (!!g.checkedIn === checkedIn && !!g.confirmed === confirmed && !!g.vegetarian === vegetarian) continue; // không đổi -> bỏ
     const chkISO = iChkAt >= 0 ? (row[iChkAt] || "").trim() : "";
     const cfmISO = iCfmAt >= 0 ? (row[iCfmAt] || "").trim() : "";
     updates.push({
@@ -473,6 +584,9 @@ async function importBackup(file) {
         confirmed,
         confirmedAt: confirmed ? (cfmISO ? new Date(cfmISO) : new Date()) : null,
         confirmedVia: confirmed ? "restore" : null,
+        vegetarian,
+        vegetarianAt: vegetarian ? new Date() : null,
+        vegetarianVia: vegetarian ? "restore" : null,
       },
     });
   }

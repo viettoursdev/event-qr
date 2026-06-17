@@ -197,6 +197,24 @@ body {
   text-decoration: underline;
   cursor: pointer;
 }
+.veg-area { margin-top: 10px; }
+.veg-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.veg-btn:active { transform: scale(0.97); }
+.veg-btn.on {
+  color: #15803d;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
 .confirm-err {
   margin-top: 10px;
   font-size: 13px;

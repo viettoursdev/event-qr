@@ -55,6 +55,14 @@
         </div>
       </header>
 
+      <!-- Bảng điều khiển ADMIN (chỉ hiện với tài khoản admin) -->
+      <div id="adminBar" class="adminbar" hidden>
+        <span class="adminbar-label">🔑 Admin · Khoá/mở thao tác cho lễ tân:</span>
+        <button id="lockCheckin" class="lockbtn" type="button"></button>
+        <button id="lockConfirm" class="lockbtn" type="button"></button>
+        <button id="lockVeg" class="lockbtn" type="button"></button>
+      </div>
+
       <div class="search-wrap">
         <input id="search" type="text" inputmode="search" autocomplete="off"
           placeholder="Tìm theo tên, STT, số điện thoại hoặc công ty…" />
@@ -66,12 +74,13 @@
         <button id="fChkUndone" class="chip" type="button">Chưa check-in <b id="cChkUndone"></b></button>
         <button id="fCfmDone" class="chip" type="button">Đã xác nhận <b id="cCfmDone"></b></button>
         <button id="fCfmUndone" class="chip" type="button">Chưa xác nhận <b id="cCfmUndone"></b></button>
+        <button id="fVeg" class="chip" type="button">🥗 Ăn chay <b id="cVeg"></b></button>
       </div>
 
       <div id="results" class="results"></div>
       <div id="statusbar" class="statusbar" hidden></div>
     </section>
 
-    <script type="module" src="./checkin.js?v=4"></script>
+    <script type="module" src="./checkin.js?v=5"></script>
   </body>
 </html>
