@@ -6,13 +6,12 @@
 // =====================================================================
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyBZBJIoq_WXw_-2ykCiGQniJHTuWxRwge8",
-  authDomain: "tour-cost-calculator-4336c.firebaseapp.com",
-  projectId: "tour-cost-calculator-4336c",
-  storageBucket: "tour-cost-calculator-4336c.firebasestorage.app",
-  messagingSenderId: "763125494718",
-  appId: "1:763125494718:web:234f075aa9934b1fabffef",
-  measurementId: "G-99VTLQ2XTL",
+  apiKey: "AIzaSyDZrNwXaclfBcO8o3JBEkFy2tIRsP5F0Xg",
+  authDomain: "viettours-event-3e5be.firebaseapp.com",
+  projectId: "viettours-event-3e5be",
+  storageBucket: "viettours-event-3e5be.firebasestorage.app",
+  messagingSenderId: "99090986369",
+  appId: "1:99090986369:web:b173121453eb8f644ae480",
 };
 
 // Tài khoản nhân viên dùng chung (tạo trong Firebase Auth > Email/Password).

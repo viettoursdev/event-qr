@@ -58,7 +58,7 @@
   let _fb; // undefined = chưa nạp; null = chưa cấu hình Firebase
   async function loadFb() {
     if (_fb !== undefined) return _fb;
-    const { firebaseConfig, collectionName } = await import("./checkin/config.js?v=2");
+    const { firebaseConfig, collectionName } = await import("./checkin/config.js?v=3");
     if (!firebaseConfig || !firebaseConfig.apiKey) return (_fb = null);
     const { initializeApp } = await import(`${SDK}/firebase-app.js`);
     const { getFirestore, doc, getDoc, setDoc, serverTimestamp } = await import(`${SDK}/firebase-firestore.js`);
