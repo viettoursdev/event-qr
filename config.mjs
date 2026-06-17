@@ -6,7 +6,8 @@ export const config = {
   // --- Thông tin sự kiện (hiển thị trên trang web) ---
   eventName: "Kỷ niệm Viettours 25 năm",
   eventSubtitle: "ÂN TÌNH VẠN DẶM",
-  footerNote: "Quý khách vui lòng xác nhận tham dự để khâu phục vụ được chu đáo. Quý khách có nhu cầu ăn chay xin vui lòng liên hệ hotline 0919 51 7777 trước ngày 25/6 để được hỗ trợ.",
+  footerNote:
+    "Quý khách vui lòng xác nhận tham dự và xác nhận ăn chay (nếu có) trước ngày 25/06/2026 để công tác phục vụ được chu đáo. Mọi thắc mắc cần hỗ trợ, xin vui lòng liên hệ hotline 0919 51 7777.\nXin hẹn gặp lại quý khách tại sự kiện",
 
   // Hạn chót khách tự bấm "Xác nhận tham dự" trên trang QR. Sau mốc này nút bị KHOÁ.
   // Định dạng ISO kèm múi giờ VN (+07:00). Để "" nếu không giới hạn thời gian.
@@ -28,6 +29,7 @@ export const config = {
   columns: {
     name: "TÊN KHÁCH MỜI", // bắt buộc
     title: "DANH XƯNG",    // tùy chọn — danh xưng (Ông/Bà) hiển thị trước tên
+    position: "CHỨC VỤ",   // tùy chọn — chức vụ, hiển thị dưới tên
     company: "ĐƠN VỊ",     // tùy chọn — hiển thị dưới tên; để "" nếu không có
     table: "SỐ BÀN",       // có thể bỏ trống lúc xuất QR, cập nhật sau
   },
