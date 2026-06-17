@@ -30,6 +30,7 @@ let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
 let checkinFilter = ""; // "" | "done" | "undone"
 let confirmFilter = ""; // "" | "done" | "undone"
 let vegFilter = false; // chỉ hiện khách ăn chay
+let showDashboard = false; // bảng thống kê
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
 let isAdmin = false;
 let locks = { checkin: false, confirm: false, vegetarian: false }; // Admin khoá thao tác của Operations
@@ -254,6 +255,11 @@ function enterApp() {
     vegFilter = !vegFilter;
     render();
   });
+  $("btnDash").addEventListener("click", () => {
+    showDashboard = !showDashboard;
+    $("btnDash").classList.toggle("active", showDashboard);
+    render();
+  });
   $("btnExport").addEventListener("click", exportBackup);
   $("btnImport").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", (e) => {
@@ -349,6 +355,10 @@ function render() {
   const q = $("search").value;
   $("clearSearch").hidden = !q;
   const box = $("results");
+  if (showDashboard) {
+    box.innerHTML = renderDashboard();
+    return;
+  }
   $("fChkDone").classList.toggle("active", checkinFilter === "done");
   $("fChkUndone").classList.toggle("active", checkinFilter === "undone");
   $("fCfmDone").classList.toggle("active", confirmFilter === "done");
@@ -411,6 +421,49 @@ function render() {
   box.querySelectorAll("[data-unveg]").forEach((btn) =>
     btn.addEventListener("click", () => toggleVeg(btn.getAttribute("data-unveg"), false))
   );
+}
+
+function statCard(label, n, sub) {
+  return `<div class="stat"><div class="stat-num">${n}</div><div class="stat-label">${esc(label)}${sub ? ` · ${esc(sub)}` : ""}</div></div>`;
+}
+function renderDashboard() {
+  const total = guests.length;
+  const ci = guests.filter((g) => g.checkedIn).length;
+  const cf = guests.filter((g) => g.confirmed).length;
+  const veg = guests.filter((g) => g.vegetarian).length;
+  const pct = (n) => (total ? Math.round((n * 100) / total) + "%" : "0%");
+
+  // gộp theo bàn
+  const map = new Map();
+  for (const g of guests) {
+    const t = String(g.table == null ? "" : g.table).trim() || "(chưa xếp bàn)";
+    if (!map.has(t)) map.set(t, { total: 0, ci: 0, cf: 0, veg: 0 });
+    const o = map.get(t);
+    o.total++;
+    if (g.checkedIn) o.ci++;
+    if (g.confirmed) o.cf++;
+    if (g.vegetarian) o.veg++;
+  }
+  const tables = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], "vi", { numeric: true }));
+
+  const cards = `<div class="dash-cards">
+    ${statCard("Tổng khách", total, "")}
+    ${statCard("Đã check-in", ci, pct(ci))}
+    ${statCard("Đã xác nhận", cf, pct(cf))}
+    ${statCard("Ăn chay", veg, "")}
+  </div>`;
+  const rows = tables
+    .map(
+      ([t, o]) =>
+        `<tr><td>${esc(t)}</td><td>${o.total}</td><td>${o.ci}</td><td>${o.cf}</td><td>${o.veg}</td></tr>`
+    )
+    .join("");
+  const tbl = `<div class="dash-tablewrap"><table class="dash-table">
+    <thead><tr><th>Bàn</th><th>Khách</th><th>Check-in</th><th>Xác nhận</th><th>Ăn chay</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td>Tổng · ${tables.length} bàn</td><td>${total}</td><td>${ci}</td><td>${cf}</td><td>${veg}</td></tr></tfoot>
+  </table></div>`;
+  return `<div class="dashboard">${cards}<div class="dash-subhead">Số lượng khách theo bàn</div>${tbl}</div>`;
 }
 
 function confirmBadge(g) {
