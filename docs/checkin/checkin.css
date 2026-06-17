@@ -151,6 +151,8 @@ body {
   background: #fff; color: #166534; border: 1.5px solid #86efac;
 }
 .lockbtn.locked { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.lockbtn.danger { background: #dc2626; color: #fff; border-color: #dc2626; margin-left: auto; }
+.lockbtn.danger:hover { background: #b91c1c; }
 
 .card-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: stretch; }
 .btn-confirm {
