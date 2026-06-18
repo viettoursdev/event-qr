@@ -46,7 +46,7 @@ if (!headers.includes(C.phone)) console.log(`⚠️ Không thấy cột SĐT "${
 
 const norm = (s) =>
   String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/\s+/g, " ").trim();
-const get = (row, col) => (col && headers.includes(col) ? String(row[col] ?? "").trim() : "");
+const get = (row, col) => (col && headers.includes(col) ? String(row[col] ?? "").replace(/\s+/g, " ").trim() : "");
 
 console.log(`\n📄 Đọc ${rows.length} khách từ ${cfg.inputFile}.`);
 
@@ -62,11 +62,13 @@ let n = 0,
   pending = 0;
 for (const row of rows) {
   const stt = get(row, C.stt);
-  if (!stt) continue;
-  const id = String(stt);
+  const nm = get(row, C.name);
+  if (!stt && !nm) continue; // bỏ dòng rỗng hẳn
+  // Khách không có STT (vd khách bổ sung cuối): khóa theo tên (chỉ hiện tên)
+  const id = stt ? String(stt) : "x-" + norm(nm).replace(/\s+/g, "-").slice(0, 40);
   const prev = existing.get(id) || {};
   const data = {
-    stt: Number(stt) || stt,
+    stt: stt ? Number(stt) || stt : "",
     name: get(row, C.name),
     company: get(row, C.company),
     phone: get(row, C.phone),

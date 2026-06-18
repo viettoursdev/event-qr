@@ -67,7 +67,7 @@ export const config = {
       stt: "STT",
       name: "TÊN KHÁCH MỜI",
       company: "ĐƠN VỊ",
-      phone: "Số điện thoại", // sửa cho khớp cột SĐT trong file của bạn (V3 chưa có cột này)
+      phone: "ĐT LIÊN LẠC", // cột SĐT để tìm trong check-in
       table: "SỐ BÀN",
     },
   },

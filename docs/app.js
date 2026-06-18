@@ -46,11 +46,12 @@
       ${g.company ? `<div class="company">${esc(g.company)}</div>` : ""}
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}
-      <div class="confirm-area" id="confirmArea"></div>
-      <div class="veg-area" id="vegArea"></div>
+      ${g.stt ? `<div class="confirm-area" id="confirmArea"></div><div class="veg-area" id="vegArea"></div>` : ""}
     `);
-    setupConfirm(g, cfg);
-    setupVeg(g);
+    if (g.stt) {
+      setupConfirm(g, cfg);
+      setupVeg(g);
+    }
   }
 
   // ----- Firebase: đọc thông tin khách (event_public) + ghi xác nhận (event_guests) -----

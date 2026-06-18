@@ -24,11 +24,8 @@ const guests = JSON.parse(fs.readFileSync(indexPath, "utf8"));
 const safeName = (s) =>
   String(s || "khach").replace(/[\/\\:*?"<>|]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
 
-// đường dẫn ảnh QR theo đúng quy ước đặt tên ở qrcodes.mjs
-const files = guests.map((g, i) => {
-  const file = `${String(i + 1).padStart(3, "0")}_${safeName(g.name)}_${g.token}.png`;
-  return p("private", "qr", file);
-});
+// đường dẫn ảnh QR theo đúng quy ước đặt tên ở qrcodes.mjs ("STT - Tên.png")
+const files = guests.map((g) => p("private", "qr", `${String(g.stt || "").padStart(3, "0")} - ${safeName(g.name)}.png`));
 const missing = files.filter((f) => !fs.existsSync(f));
 if (missing.length) {
   console.error(`\n❌ Thiếu ${missing.length} ảnh QR (chạy \`npm run qr\` trước). Ví dụ: ${path.basename(missing[0])}\n`);

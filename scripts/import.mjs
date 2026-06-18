@@ -74,7 +74,7 @@ function get(row, key) {
   // key là tên logic (name/company/table) -> map sang cột Excel
   const colMap = { name: nameCol, company: companyCol, table: tableCol, title: titleCol, position: positionCol };
   const col = colMap[key] || key;
-  return String(row[col] ?? "").trim();
+  return String(row[col] ?? "").replace(/\s+/g, " ").trim(); // gộp \r\n + space thừa
 }
 function buildKey(row, seenCounts) {
   let base;

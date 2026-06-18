@@ -49,8 +49,12 @@ const safeName = (s) =>
     .trim()
     .slice(0, 60);
 
-// Tạo 1 ảnh card: QR ở trên, họ tên + STT in bên dưới
+// Tên file theo format "STT - Tên khách mời" (STT đệm 0 để sắp xếp đúng)
+const qrFileName = (g) => `${String(g.stt || "").padStart(3, "0")} - ${safeName(g.name)}.png`;
+
+// Tạo 1 ảnh card: QR ở trên, nhãn "STT - Tên khách mời" in bên dưới
 async function makeCard(url, name, stt) {
+  const label = stt ? `${stt} - ${name}` : name;
   const qrBuf = await QRCode.toBuffer(url, {
     width: pngSize,
     margin,
@@ -78,15 +82,13 @@ async function makeCard(url, name, stt) {
     return { fontSize, textLen };
   }
 
-  const sttText = stt ? `STT: ${stt}` : "";
-  const nameFit = fitText(name, 40, 22);
-  const labelH = sttText ? 130 : 90;
+  const labelFit = fitText(label, 38, 18);
+  const labelH = 86;
   const H = padTop + pngSize + labelH;
 
   const labelSvg = `<svg width="${W}" height="${labelH}" xmlns="http://www.w3.org/2000/svg">
-    <text x="50%" y="56" text-anchor="middle"${nameFit.textLen}
-      font-family="Helvetica, Arial, sans-serif" font-size="${nameFit.fontSize}" font-weight="700" fill="#111111">${xmlEsc(name)}</text>
-    ${sttText ? `<text x="50%" y="100" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="26" font-weight="600" fill="#666666">${xmlEsc(sttText)}</text>` : ""}
+    <text x="50%" y="52" text-anchor="middle"${labelFit.textLen}
+      font-family="Helvetica, Arial, sans-serif" font-size="${labelFit.fontSize}" font-weight="700" fill="#111111">${xmlEsc(label)}</text>
   </svg>`;
 
   return sharp({ create: { width: W, height: H, channels: 4, background: "#ffffff" } })
@@ -102,9 +104,8 @@ console.log(`\n🔧 Sinh ${guests.length} mã QR${nameOnImage ? " (có in tên)"
 let n = 0;
 for (const g of guests) {
   const buf = await makeCard(g.url, g.name, g.stt);
-  const seq = String(++n).padStart(3, "0");
-  const file = `${seq}_${safeName(g.name)}_${g.token}.png`;
-  fs.writeFileSync(p("private", "qr", file), buf);
+  n++;
+  fs.writeFileSync(p("private", "qr", qrFileName(g)), buf);
   if (n % 50 === 0) console.log(`   ...${n}/${guests.length}`);
 }
 console.log(`   ✅ ${n} file PNG trong private/qr/`);
@@ -112,15 +113,13 @@ console.log(`   ✅ ${n} file PNG trong private/qr/`);
 // --- Trang in (xem nhanh / in hàng loạt) ---
 const htmlEsc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const { cardsPerRow, cardsPerCol } = config.qr;
-let seq2 = 0;
 const cards = guests
   .map((g) => {
-    const file = `${String(++seq2).padStart(3, "0")}_${safeName(g.name)}_${g.token}.png`;
+    const file = qrFileName(g);
     return `    <div class="card">
       <img src="qr/${encodeURIComponent(file)}" alt="QR ${htmlEsc(g.name)}"/>
       <div class="meta">
-        <div class="name">${htmlEsc(g.name)}</div>
-        ${g.stt ? `<div class="company">STT: ${htmlEsc(g.stt)}</div>` : ""}
+        <div class="name">${g.stt ? htmlEsc(g.stt) + " - " : ""}${htmlEsc(g.name)}</div>
       </div>
     </div>`;
   })
