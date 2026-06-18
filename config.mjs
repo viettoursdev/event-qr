@@ -13,6 +13,10 @@ export const config = {
   // Định dạng ISO kèm múi giờ VN (+07:00). Để "" nếu không giới hạn thời gian.
   confirmDeadline: "2026-07-01T17:30:00+07:00",
 
+  // Số bàn bị ẩn ("Đang cập nhật") cho tới mốc này, sau đó tự hiển thị.
+  // 24:00 ngày 28/06 = 00:00 ngày 29/06 (giờ VN). Để "" nếu muốn hiện ngay.
+  tableRevealAt: "2026-06-29T00:00:00+07:00",
+
   // --- URL gốc nơi web app được host trên GitHub Pages ---
   // Sau khi tạo repo GitHub tên "event-qr" với username "tuanhoang",
   // địa chỉ sẽ là: https://tuanhoang.github.io/event-qr/

@@ -169,6 +169,7 @@ fs.writeFileSync(
       eventSubtitle: config.eventSubtitle,
       footerNote: config.footerNote,
       confirmDeadline: config.confirmDeadline || "",
+      tableRevealAt: config.tableRevealAt || "",
     },
     null,
     2

@@ -26,7 +26,10 @@
   }
 
   function renderGuest(cfg, g) {
-    const hasTable = g.table != null && String(g.table).trim() !== "";
+    // Ẩn số bàn cho tới mốc tableRevealAt (vd 24:00 ngày 28/06)
+    const revealAt = cfg && cfg.tableRevealAt ? Date.parse(cfg.tableRevealAt) : NaN;
+    const tableHidden = !isNaN(revealAt) && Date.now() < revealAt;
+    const hasTable = !tableHidden && g.table != null && String(g.table).trim() !== "";
     const tableBox = hasTable
       ? `<div class="table-box">
            <div class="table-label">BÀN SỐ</div>
