@@ -234,6 +234,14 @@ function enterApp() {
     s.focus();
     render();
   });
+  const sStt = $("searchStt");
+  sStt.addEventListener("input", render);
+  $("clearStt").addEventListener("click", () => {
+    sStt.value = "";
+    $("clearStt").hidden = true;
+    sStt.focus();
+    render();
+  });
   const toggleFilter = (cur, val) => (cur === val ? "" : val);
   $("fChkDone").addEventListener("click", () => {
     checkinFilter = toggleFilter(checkinFilter, "done");
@@ -356,6 +364,7 @@ function onData(arr) {
   render();
 }
 
+// Ô tìm thường: chỉ tên / công ty / SĐT (KHÔNG tìm theo STT)
 function search(q) {
   const raw = q.trim();
   const nq = norm(q);
@@ -364,19 +373,24 @@ function search(q) {
   const tokens = nq.split(" ").filter(Boolean);
   const isNumeric = raw !== "" && /^\d+$/.test(raw);
   return guests.filter((g) => {
-    const stt = String(g.stt == null ? "" : g.stt);
     const textOk = tokens.length > 0 && tokens.every((t) => g._n.includes(t));
     const phoneOk = dq.length >= 2 && g._phone.includes(dq);
-    const sttOk = isNumeric && (stt === raw || stt.startsWith(raw));
-    // truy vấn toàn số -> khớp STT hoặc SĐT; ngược lại -> khớp tên/công ty
-    if (isNumeric) return sttOk || phoneOk;
+    if (isNumeric) return phoneOk; // gõ số -> chỉ khớp SĐT
     return textOk || phoneOk;
   });
 }
 
+// Ô tìm STT: chỉ khớp theo STT (bằng đúng hoặc bắt đầu bằng)
+function sttMatch(g, qStt) {
+  const stt = String(g.stt == null ? "" : g.stt).trim();
+  return stt !== "" && (stt === qStt || stt.startsWith(qStt));
+}
+
 function render() {
   const q = $("search").value;
+  const qStt = $("searchStt").value.trim();
   $("clearSearch").hidden = !q;
+  $("clearStt").hidden = !qStt;
   const box = $("results");
   if (showDashboard) {
     box.innerHTML = renderDashboard();
@@ -395,13 +409,16 @@ function render() {
   if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
   if (vegFilter) fl.push("ăn chay");
 
+  const hasQ = !!q.trim();
+  const hasStt = !!qStt;
   let list;
-  if (q.trim()) {
-    list = search(q);
+  if (hasQ || hasStt) {
+    list = hasQ ? search(q) : guests.slice();
+    if (hasStt) list = list.filter((g) => sttMatch(g, qStt));
   } else if (anyFilter) {
     list = guests.slice();
   } else {
-    box.innerHTML = `<div class="hint">Nhập tên, STT, số điện thoại hoặc công ty để tìm khách.</div>`;
+    box.innerHTML = `<div class="hint">Nhập tên / SĐT / công ty ở ô trái, hoặc STT ở ô phải để tìm khách.</div>`;
     return;
   }
 
@@ -410,15 +427,16 @@ function render() {
   if (vegFilter) list = list.filter((g) => g.vegetarian);
 
   if (list.length === 0) {
-    const empty = q.trim() ? `Không tìm thấy khách phù hợp với “${esc(q)}”.` : "Không có khách nào khớp bộ lọc. 🎉";
+    const term = hasStt ? `STT “${esc(qStt)}”` : `“${esc(q)}”`;
+    const empty = hasQ || hasStt ? `Không tìm thấy khách phù hợp với ${term}.` : "Không có khách nào khớp bộ lọc. 🎉";
     box.innerHTML = `<div class="hint">${empty}</div>`;
     return;
   }
 
   const cap = 100;
-  const dup = !!q.trim() && list.length > 1;
+  const dup = (hasQ || hasStt) && list.length > 1;
   let label;
-  if (q.trim()) {
+  if (hasQ || hasStt) {
     label = `${list.length} kết quả${fl.length ? ` · lọc: ${fl.join(" & ")}` : dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
   } else {
     label = `${list.length} khách ${fl.join(" & ")}`;

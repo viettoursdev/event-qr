@@ -66,9 +66,15 @@
       </div>
 
       <div class="search-wrap">
-        <input id="search" type="text" inputmode="search" autocomplete="off"
-          placeholder="Tìm theo tên, STT, số điện thoại hoặc công ty…" />
-        <button id="clearSearch" class="clear" hidden>✕</button>
+        <div class="search-box main">
+          <input id="search" type="text" inputmode="search" autocomplete="off"
+            placeholder="Tìm theo tên, số điện thoại hoặc công ty…" />
+          <button id="clearSearch" class="clear" hidden>✕</button>
+        </div>
+        <div class="search-box stt">
+          <input id="searchStt" type="text" inputmode="numeric" autocomplete="off" placeholder="Tìm STT…" />
+          <button id="clearStt" class="clear" hidden>✕</button>
+        </div>
       </div>
 
       <div class="filterbar">
@@ -83,6 +89,6 @@
       <div id="statusbar" class="statusbar" hidden></div>
     </section>
 
-    <script type="module" src="./checkin.js?v=9"></script>
+    <script type="module" src="./checkin.js?v=10"></script>
   </body>
 </html>
