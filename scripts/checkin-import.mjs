@@ -70,6 +70,7 @@ for (const row of rows) {
   const data = {
     stt: stt ? Number(stt) || stt : "",
     name: get(row, C.name),
+    position: get(row, C.position),
     company: get(row, C.company),
     phone: get(row, C.phone),
     table: get(row, C.table),

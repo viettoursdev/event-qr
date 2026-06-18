@@ -546,10 +546,12 @@ function card(g) {
     : `<button class="btn-checkin" data-checkin="${esc(g.id)}"${dis("checkin")}>Check-in</button>`;
   const ciTag = g.checkedIn ? `<span class="badge ok">✓ Đã check-in</span> ` : "";
   const vegTag = g.vegetarian ? ` <span class="badge veg-yes">🥗 Ăn chay</span>` : "";
+  const sttTag = g.stt !== "" && g.stt != null ? `<span class="stt-tag">STT ${esc(g.stt)}</span> ` : "";
+  const sub = [g.position, g.company].filter(Boolean).map(esc).join(" · ");
   return `<div class="card${g.checkedIn ? " done" : ""}">
     <div class="card-main">
-      <div class="name">${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}</div>
-      <div class="sub">${esc(g.company || "")}</div>
+      <div class="name">${sttTag}${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}</div>
+      ${sub ? `<div class="sub">${sub}</div>` : ""}
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
       ${activityLog(g)}
     </div>

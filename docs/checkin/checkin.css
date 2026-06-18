@@ -127,6 +127,7 @@ body {
 .activity div { display: flex; flex-wrap: wrap; gap: 2px 6px; }
 .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .badge.ok { background: var(--ok); color: #fff; }
+.stt-tag { font-size: 12px; font-weight: 800; color: #fff; background: var(--teal); padding: 1px 7px; border-radius: 6px; }
 .badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }
 .badge.confirm-no { background: #fef3f2; color: #b42318; border: 1px solid #fcdcd7; }
 .badge.veg-yes { background: #ecfdf3; color: #15803d; border: 1px solid #bbf7d0; }

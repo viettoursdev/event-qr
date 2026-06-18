@@ -70,6 +70,7 @@ export const config = {
     columns: {
       stt: "STT",
       name: "TÊN KHÁCH MỜI",
+      position: "CHỨC VỤ", // chức vụ hiển thị trên thẻ check-in
       company: "ĐƠN VỊ",
       phone: "ĐT LIÊN LẠC", // cột SĐT để tìm trong check-in
       table: "SỐ BÀN",
