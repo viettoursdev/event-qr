@@ -49,8 +49,8 @@ const safeName = (s) =>
     .trim()
     .slice(0, 60);
 
-// Tên file theo format "STT - Tên khách mời" (STT đệm 0 để sắp xếp đúng)
-const qrFileName = (g) => `${String(g.stt || "").padStart(3, "0")} - ${safeName(g.name)}.png`;
+// Tên file theo format "STT(3 số) - Tên khách mời"; khách không STT -> chỉ "Tên"
+const qrFileName = (g) => (g.stt ? `${String(g.stt).padStart(3, "0")} - ${safeName(g.name)}.png` : `${safeName(g.name)}.png`);
 
 // Tạo 1 ảnh card: QR ở trên, nhãn "STT - Tên khách mời" in bên dưới
 async function makeCard(url, name, stt) {
