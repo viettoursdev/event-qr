@@ -121,7 +121,8 @@ body {
 .name-line {
   display: block;
 }
-.name.multiline .name-line {
+.name.multiline .name-line,
+.name.oneline .name-line {
   white-space: nowrap;
 }
 /* Đơn vị có xuống hàng trong cell: mỗi dòng 1 hàng, nowrap; JS giảm cỡ chữ cho vừa. */

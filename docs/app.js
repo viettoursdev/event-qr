@@ -28,6 +28,9 @@
   function renderGuest(cfg, g) {
     // Tên có thể nhiều dòng (xuống hàng trong Excel) -> mỗi dòng hiển thị riêng.
     const nameLines = String(g.name || "Quý khách").split("\n");
+    // STT >= 13: tên BẮT BUỘC 1 hàng, dài quá thì giảm cỡ chữ (STT 1-12 giữ cơ chế cũ).
+    const sttNum = parseInt(g.stt, 10);
+    const oneLine = !isNaN(sttNum) && sttNum >= 13;
     // Đơn vị cũng giữ xuống hàng trong cell (tối đa 2 dòng, tự giảm cỡ chữ như tên).
     const companyLines = String(g.company || "").split("\n");
     const companyMulti = companyLines.length > 1;
@@ -50,9 +53,11 @@
       <div class="subtitle">${esc(cfg.eventSubtitle || "")}</div>
       <div class="greeting">Kính chào</div>
       ${g.title ? `<div class="honorific">${esc(g.title)}</div>` : ""}
-      <h1 class="name${nameLines.length > 1 ? " multiline" : ""}" id="guestName">${nameLines
-        .map((ln) => `<span class="name-line">${esc(ln)}</span>`)
-        .join("")}</h1>
+      <h1 class="name${oneLine ? " oneline" : nameLines.length > 1 ? " multiline" : ""}" id="guestName">${
+        oneLine
+          ? `<span class="name-line">${esc(nameLines.join(" "))}</span>`
+          : nameLines.map((ln) => `<span class="name-line">${esc(ln)}</span>`).join("")
+      }</h1>
       ${g.position ? `<div class="position">${esc(g.position)}</div>` : ""}
       ${
         g.company
@@ -77,16 +82,19 @@
   //  • đơn vị: nếu có xuống hàng trong cell -> như tên; nếu không -> tối đa 2 dòng
   //  • chức vụ: tối đa 2 dòng (wrap thường), tràn thì giảm cỡ chữ
   function fitAll() {
-    fitWidth(document.getElementById("guestName"), ".name-line", 28, 15);
+    const nameEl = document.getElementById("guestName");
+    if (nameEl && nameEl.classList.contains("oneline")) fitWidth(nameEl, ".name-line", 28, 13);
+    else if (nameEl && nameEl.classList.contains("multiline")) fitWidth(nameEl, ".name-line", 28, 15);
     fitLines(document.querySelector(".position"), 2, 14, 11);
     const comp = document.getElementById("guestCompany");
     if (comp && comp.classList.contains("multiline")) fitWidth(comp, ".cline", 15, 11);
     else fitLines(comp, 2, 15, 11);
   }
 
-  // Giảm dần cỡ chữ tới khi mọi dòng (đã nowrap) vừa bề ngang. Chỉ chạy khi .multiline.
+  // Giảm dần cỡ chữ tới khi mọi dòng (đã nowrap) vừa bề ngang.
+  // Caller chỉ gọi khi cần fit (tên oneline/multiline, đơn vị multiline).
   function fitWidth(el, sel, maxFont, minFont) {
-    if (!el || !el.classList.contains("multiline")) return;
+    if (!el) return;
     const lines = el.querySelectorAll(sel);
     if (!lines.length) return;
     let size = maxFont;
