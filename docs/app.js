@@ -58,11 +58,18 @@
       ${tableBox}
       ${g.stt ? `<div class="confirm-area" id="confirmArea"></div><div class="veg-area" id="vegArea"></div>` : ""}
     `);
-    fitName();
+    fitAll();
     if (g.stt) {
       setupConfirm(g, cfg);
       setupVeg(g);
     }
+  }
+
+  // Gom mọi auto-fit: tên (theo bề ngang) + chức vụ/đơn vị (tối đa 2 dòng).
+  function fitAll() {
+    fitName();
+    fitLines(document.querySelector(".position"), 2, 14, 11);
+    fitLines(document.querySelector(".company"), 2, 15, 11);
   }
 
   // Giảm dần cỡ chữ tên (chỉ khi nhiều dòng) cho tới khi mọi dòng vừa bề ngang.
@@ -81,6 +88,23 @@
       return false;
     };
     while (size > MIN && overflow()) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+  }
+
+  // Ép text (chức vụ/đơn vị) hiển thị tối đa maxLines dòng: nếu tràn thì
+  // giảm dần cỡ chữ từ maxFont tới minFont cho tới khi không quá maxLines dòng.
+  function fitLines(el, maxLines, maxFont, minFont) {
+    if (!el) return;
+    let size = maxFont;
+    el.style.fontSize = size + "px";
+    const lineH = () => {
+      const lh = parseFloat(getComputedStyle(el).lineHeight);
+      return isNaN(lh) ? size * 1.3 : lh;
+    };
+    // scrollHeight > maxLines dòng (cho dung sai 1px) => còn tràn -> giảm tiếp
+    while (size > minFont && el.scrollHeight > maxLines * lineH() + 1) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
@@ -259,6 +283,6 @@
   }
 
   window.addEventListener("hashchange", main);
-  window.addEventListener("resize", fitName);
+  window.addEventListener("resize", fitAll);
   main();
 })();
