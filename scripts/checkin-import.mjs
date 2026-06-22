@@ -50,11 +50,28 @@ const get = (row, col) => (col && headers.includes(col) ? String(row[col] ?? "")
 
 console.log(`\n📄 Đọc ${rows.length} khách từ ${cfg.inputFile}.`);
 
-// --- Giữ trạng thái check-in cũ ---
-const snap = await db.collection(cfg.collection).get();
-const existing = new Map();
-snap.forEach((d) => existing.set(d.id, d.data()));
-console.log(`   Trên Firestore đang có ${existing.size} khách.`);
+// OVERWRITE=1 -> GHI ĐÈ: xoá sạch collection rồi nạp lại (reset check-in/xác nhận/ăn chay).
+// Mặc định (không cờ) -> MERGE: giữ nguyên trạng thái cũ, chỉ cập nhật thông tin khách.
+const OVERWRITE = /^(1|true|yes)$/i.test(process.env.OVERWRITE || "");
+
+let existing = new Map();
+if (OVERWRITE) {
+  let cleared = 0;
+  while (true) {
+    const s = await db.collection(cfg.collection).limit(400).get();
+    if (s.empty) break;
+    const b = db.batch();
+    s.docs.forEach((d) => b.delete(d.ref));
+    await b.commit();
+    cleared += s.size;
+  }
+  console.log(`   ⚠️ GHI ĐÈ: đã xoá ${cleared} doc cũ (reset check-in/xác nhận/ăn chay).`);
+} else {
+  // --- Giữ trạng thái check-in cũ ---
+  const snap = await db.collection(cfg.collection).get();
+  snap.forEach((d) => existing.set(d.id, d.data()));
+  console.log(`   Trên Firestore đang có ${existing.size} khách.`);
+}
 
 // --- Ghi theo lô ---
 let batch = db.batch();
@@ -80,7 +97,7 @@ for (const row of rows) {
     checkinAt: prev.checkinAt ?? null,
     checkinBy: prev.checkinBy ?? null,
   };
-  batch.set(db.collection(cfg.collection).doc(id), data, { merge: true });
+  batch.set(db.collection(cfg.collection).doc(id), data, OVERWRITE ? {} : { merge: true });
   n++;
   if (++pending >= 400) {
     await batch.commit();
@@ -91,7 +108,11 @@ for (const row of rows) {
 }
 if (pending) await batch.commit();
 
-const done = [...existing.values()].filter((d) => d.checkedIn).length;
-console.log(`\n✅ Đã nạp ${n} khách lên Firestore collection "${cfg.collection}".`);
-console.log(`   (Giữ nguyên ${done} khách đã check-in trước đó.)\n`);
+console.log(`\n✅ Đã ${OVERWRITE ? "GHI ĐÈ" : "nạp"} ${n} khách lên Firestore collection "${cfg.collection}".`);
+if (OVERWRITE) {
+  console.log(`   (Trạng thái check-in/xác nhận/ăn chay đã reset.)\n`);
+} else {
+  const done = [...existing.values()].filter((d) => d.checkedIn).length;
+  console.log(`   (Giữ nguyên ${done} khách đã check-in trước đó.)\n`);
+}
 process.exit(0);

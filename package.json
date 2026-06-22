@@ -9,6 +9,7 @@
     "pdf": "node scripts/pdf.mjs",
     "public": "node scripts/public-import.mjs",
     "checkin:import": "node scripts/checkin-import.mjs",
+    "checkin:overwrite": "OVERWRITE=1 node scripts/checkin-import.mjs",
     "build": "npm run import && npm run qr && npm run pdf",
     "preview": "node scripts/preview.mjs"
   },
