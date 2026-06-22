@@ -146,6 +146,7 @@ for (const row of rows) {
   const table = tableCol && headers.includes(tableCol) ? get(row, "table") : "";
   const title = titleCol && headers.includes(titleCol) ? get(row, "title") : "";
   const position = positionCol && headers.includes(positionCol) ? get(row, "position") : "";
+  const positionDisplay = positionCol && headers.includes(positionCol) ? getLines(row, "position") : ""; // giữ xuống hàng
   if (!name) blankNames++;
   if (!table) blankTables++;
 
@@ -153,7 +154,7 @@ for (const row of rows) {
   const stt = idColumn ? String(row[idColumn] ?? "").trim() : "";
   const pub = { name: nameDisplay || name };
   if (title) pub.title = title;
-  if (position) pub.position = position;
+  if (position) pub.position = positionDisplay || position;
   if (company) pub.company = companyDisplay || company;
   if (stt) pub.stt = stt;
   pub.table = table; // có thể rỗng -> web hiển thị "Đang cập nhật"
@@ -167,6 +168,7 @@ for (const row of rows) {
     name,
     nameDisplay,
     position,
+    positionDisplay,
     company,
     companyDisplay,
     table,

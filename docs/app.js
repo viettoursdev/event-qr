@@ -34,6 +34,9 @@
     // Đơn vị cũng giữ xuống hàng trong cell (tối đa 2 dòng, tự giảm cỡ chữ như tên).
     const companyLines = String(g.company || "").split("\n");
     const companyMulti = companyLines.length > 1;
+    // Chức vụ cũng giữ xuống hàng trong cell (tối đa 2 dòng, giảm font cho vừa).
+    const positionLines = String(g.position || "").split("\n");
+    const positionMulti = positionLines.length > 1;
     // Ẩn số bàn cho tới mốc tableRevealAt (vd 24:00 ngày 28/06)
     const revealAt = cfg && cfg.tableRevealAt ? Date.parse(cfg.tableRevealAt) : NaN;
     const tableHidden = !isNaN(revealAt) && Date.now() < revealAt;
@@ -58,7 +61,13 @@
           ? `<span class="name-line">${esc(nameLines.join(" "))}</span>`
           : nameLines.map((ln) => `<span class="name-line">${esc(ln)}</span>`).join("")
       }</h1>
-      ${g.position ? `<div class="position">${esc(g.position)}</div>` : ""}
+      ${
+        g.position
+          ? `<div class="position${positionMulti ? " multiline" : ""}" id="guestPosition">${
+              positionMulti ? positionLines.map((l) => `<span class="pline">${esc(l)}</span>`).join("") : esc(g.position)
+            }</div>`
+          : ""
+      }
       ${
         g.company
           ? `<div class="company${companyMulti ? " multiline" : ""}" id="guestCompany">${
@@ -85,7 +94,9 @@
     const nameEl = document.getElementById("guestName");
     if (nameEl && nameEl.classList.contains("oneline")) fitWidth(nameEl, ".name-line", 28, 13);
     else if (nameEl && nameEl.classList.contains("multiline")) fitWidth(nameEl, ".name-line", 28, 15);
-    fitLines(document.querySelector(".position"), 2, 14, 11);
+    const pos = document.getElementById("guestPosition");
+    if (pos && pos.classList.contains("multiline")) fitWidth(pos, ".pline", 14, 10);
+    else fitLines(pos, 2, 14, 11);
     const comp = document.getElementById("guestCompany");
     if (comp && comp.classList.contains("multiline")) fitWidth(comp, ".cline", 15, 11);
     else fitLines(comp, 2, 15, 11);
