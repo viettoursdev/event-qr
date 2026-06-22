@@ -49,11 +49,9 @@
       <div class="event">${esc(cfg.eventName || "")}</div>
       <div class="subtitle">${esc(cfg.eventSubtitle || "")}</div>
       <div class="greeting">Kính chào</div>
+      ${g.title ? `<div class="honorific">${esc(g.title)}</div>` : ""}
       <h1 class="name${nameLines.length > 1 ? " multiline" : ""}" id="guestName">${nameLines
-        .map(
-          (ln, i) =>
-            `<span class="name-line">${i === 0 && g.title ? `<span class="honorific">${esc(g.title)}</span> ` : ""}${esc(ln)}</span>`
-        )
+        .map((ln) => `<span class="name-line">${esc(ln)}</span>`)
         .join("")}</h1>
       ${g.position ? `<div class="position">${esc(g.position)}</div>` : ""}
       ${

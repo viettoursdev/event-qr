@@ -110,10 +110,11 @@ body {
   margin: 0 0 22px;
 }
 .honorific {
-  font-size: 0.62em;
+  display: block;
+  font-size: 16px;
   font-weight: 600;
   color: var(--muted);
-  vertical-align: baseline;
+  margin-top: 4px;
 }
 /* Tên nhiều dòng (có xuống hàng trong Excel): mỗi dòng 1 hàng, KHÔNG tự wrap.
    JS fitName() sẽ giảm cỡ chữ cho vừa bề ngang nếu dòng quá dài. */
