@@ -97,11 +97,13 @@ body {
 }
 .position {
   font-size: 14px;
+  font-weight: 500;
   color: var(--muted);
   margin: 0 0 2px;
 }
 .company {
   font-size: 15px;
+  font-weight: 500;
   color: var(--muted);
   margin: 0 0 22px;
 }
