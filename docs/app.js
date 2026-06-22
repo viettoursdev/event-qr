@@ -26,6 +26,8 @@
   }
 
   function renderGuest(cfg, g) {
+    // Tên có thể nhiều dòng (xuống hàng trong Excel) -> mỗi dòng hiển thị riêng.
+    const nameLines = String(g.name || "Quý khách").split("\n");
     // Ẩn số bàn cho tới mốc tableRevealAt (vd 24:00 ngày 28/06)
     const revealAt = cfg && cfg.tableRevealAt ? Date.parse(cfg.tableRevealAt) : NaN;
     const tableHidden = !isNaN(revealAt) && Date.now() < revealAt;
@@ -44,16 +46,43 @@
       <div class="event">${esc(cfg.eventName || "")}</div>
       <div class="subtitle">${esc(cfg.eventSubtitle || "")}</div>
       <div class="greeting">Kính chào</div>
-      <h1 class="name">${g.title ? `<span class="honorific">${esc(g.title)}</span> ` : ""}${esc(g.name || "Quý khách").replace(/\n/g, "<br>")}</h1>
+      <h1 class="name${nameLines.length > 1 ? " multiline" : ""}" id="guestName">${nameLines
+        .map(
+          (ln, i) =>
+            `<span class="name-line">${i === 0 && g.title ? `<span class="honorific">${esc(g.title)}</span> ` : ""}${esc(ln)}</span>`
+        )
+        .join("")}</h1>
       ${g.position ? `<div class="position">${esc(g.position)}</div>` : ""}
       ${g.company ? `<div class="company">${esc(g.company)}</div>` : ""}
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}
       ${g.stt ? `<div class="confirm-area" id="confirmArea"></div><div class="veg-area" id="vegArea"></div>` : ""}
     `);
+    fitName();
     if (g.stt) {
       setupConfirm(g, cfg);
       setupVeg(g);
+    }
+  }
+
+  // Giảm dần cỡ chữ tên (chỉ khi nhiều dòng) cho tới khi mọi dòng vừa bề ngang.
+  function fitName() {
+    const el = document.getElementById("guestName");
+    if (!el || !el.classList.contains("multiline")) return;
+    const lines = el.querySelectorAll(".name-line");
+    if (!lines.length) return;
+    const MAX = 28,
+      MIN = 15;
+    let size = MAX;
+    el.style.fontSize = size + "px";
+    const overflow = () => {
+      const avail = el.clientWidth;
+      for (const l of lines) if (l.scrollWidth > avail + 0.5) return true;
+      return false;
+    };
+    while (size > MIN && overflow()) {
+      size -= 1;
+      el.style.fontSize = size + "px";
     }
   }
 
@@ -230,5 +259,6 @@
   }
 
   window.addEventListener("hashchange", main);
+  window.addEventListener("resize", fitName);
   main();
 })();
