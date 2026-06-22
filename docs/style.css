@@ -47,7 +47,7 @@ body {
 .brandmark-text small {
   display: block;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 2px;
   opacity: 0.9;
   margin-top: 4px;
@@ -97,13 +97,13 @@ body {
 }
 .position {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--muted);
   margin: 0 0 2px;
 }
 .company {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--muted);
   margin: 0 0 22px;
 }
@@ -252,7 +252,7 @@ body {
 .confirm-closed small {
   display: block;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 600;
   margin-top: 4px;
 }
 
