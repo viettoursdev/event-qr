@@ -28,6 +28,9 @@
   function renderGuest(cfg, g) {
     // Tên có thể nhiều dòng (xuống hàng trong Excel) -> mỗi dòng hiển thị riêng.
     const nameLines = String(g.name || "Quý khách").split("\n");
+    // Đơn vị cũng giữ xuống hàng trong cell (tối đa 2 dòng, tự giảm cỡ chữ như tên).
+    const companyLines = String(g.company || "").split("\n");
+    const companyMulti = companyLines.length > 1;
     // Ẩn số bàn cho tới mốc tableRevealAt (vd 24:00 ngày 28/06)
     const revealAt = cfg && cfg.tableRevealAt ? Date.parse(cfg.tableRevealAt) : NaN;
     const tableHidden = !isNaN(revealAt) && Date.now() < revealAt;
@@ -53,7 +56,13 @@
         )
         .join("")}</h1>
       ${g.position ? `<div class="position">${esc(g.position)}</div>` : ""}
-      ${g.company ? `<div class="company">${esc(g.company)}</div>` : ""}
+      ${
+        g.company
+          ? `<div class="company${companyMulti ? " multiline" : ""}" id="guestCompany">${
+              companyMulti ? companyLines.map((l) => `<span class="cline">${esc(l)}</span>`).join("") : esc(g.company)
+            }</div>`
+          : ""
+      }
       ${g.stt ? `<div class="stt-line"><span>STT</span><b>${esc(g.stt)}</b></div>` : ""}
       ${tableBox}
       ${g.stt ? `<div class="confirm-area" id="confirmArea"></div><div class="veg-area" id="vegArea"></div>` : ""}
@@ -65,29 +74,31 @@
     }
   }
 
-  // Gom mọi auto-fit: tên (theo bề ngang) + chức vụ/đơn vị (tối đa 2 dòng).
+  // Gom mọi auto-fit:
+  //  • tên: nhiều dòng (\n) -> mỗi dòng nowrap, giảm cỡ chữ cho vừa bề ngang
+  //  • đơn vị: nếu có xuống hàng trong cell -> như tên; nếu không -> tối đa 2 dòng
+  //  • chức vụ: tối đa 2 dòng (wrap thường), tràn thì giảm cỡ chữ
   function fitAll() {
-    fitName();
+    fitWidth(document.getElementById("guestName"), ".name-line", 28, 15);
     fitLines(document.querySelector(".position"), 2, 14, 11);
-    fitLines(document.querySelector(".company"), 2, 15, 11);
+    const comp = document.getElementById("guestCompany");
+    if (comp && comp.classList.contains("multiline")) fitWidth(comp, ".cline", 15, 11);
+    else fitLines(comp, 2, 15, 11);
   }
 
-  // Giảm dần cỡ chữ tên (chỉ khi nhiều dòng) cho tới khi mọi dòng vừa bề ngang.
-  function fitName() {
-    const el = document.getElementById("guestName");
+  // Giảm dần cỡ chữ tới khi mọi dòng (đã nowrap) vừa bề ngang. Chỉ chạy khi .multiline.
+  function fitWidth(el, sel, maxFont, minFont) {
     if (!el || !el.classList.contains("multiline")) return;
-    const lines = el.querySelectorAll(".name-line");
+    const lines = el.querySelectorAll(sel);
     if (!lines.length) return;
-    const MAX = 28,
-      MIN = 15;
-    let size = MAX;
+    let size = maxFont;
     el.style.fontSize = size + "px";
     const overflow = () => {
       const avail = el.clientWidth;
       for (const l of lines) if (l.scrollWidth > avail + 0.5) return true;
       return false;
     };
-    while (size > MIN && overflow()) {
+    while (size > minFont && overflow()) {
       size -= 1;
       el.style.fontSize = size + "px";
     }

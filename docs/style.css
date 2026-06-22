@@ -123,6 +123,11 @@ body {
 .name.multiline .name-line {
   white-space: nowrap;
 }
+/* Đơn vị có xuống hàng trong cell: mỗi dòng 1 hàng, nowrap; JS giảm cỡ chữ cho vừa. */
+.company.multiline .cline {
+  display: block;
+  white-space: nowrap;
+}
 
 .stt-line {
   display: flex;

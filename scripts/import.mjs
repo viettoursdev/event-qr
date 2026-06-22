@@ -142,6 +142,7 @@ for (const row of rows) {
   const name = get(row, "name"); // 1 dòng — dùng cho tên file QR + nhãn in
   const nameDisplay = getLines(row, "name"); // giữ xuống hàng — dùng cho web/link
   const company = companyCol ? get(row, "company") : "";
+  const companyDisplay = companyCol ? getLines(row, "company") : ""; // giữ xuống hàng cho web
   const table = tableCol && headers.includes(tableCol) ? get(row, "table") : "";
   const title = titleCol && headers.includes(titleCol) ? get(row, "title") : "";
   const position = positionCol && headers.includes(positionCol) ? get(row, "position") : "";
@@ -153,7 +154,7 @@ for (const row of rows) {
   const pub = { name: nameDisplay || name };
   if (title) pub.title = title;
   if (position) pub.position = position;
-  if (company) pub.company = company;
+  if (company) pub.company = companyDisplay || company;
   if (stt) pub.stt = stt;
   pub.table = table; // có thể rỗng -> web hiển thị "Đang cập nhật"
   fs.writeFileSync(p("docs", "g", `${token}.json`), JSON.stringify(pub));
@@ -167,6 +168,7 @@ for (const row of rows) {
     nameDisplay,
     position,
     company,
+    companyDisplay,
     table,
   });
 }
