@@ -46,7 +46,7 @@ let n = 0,
   c = 0;
 let batch = db.batch();
 for (const g of guests) {
-  const data = { name: g.name || "", table: g.table || "" };
+  const data = { name: g.nameDisplay || g.name || "", table: g.table || "" };
   if (g.title) data.title = g.title;
   if (g.position) data.position = g.position;
   if (g.company) data.company = g.company;

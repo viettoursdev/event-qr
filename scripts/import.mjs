@@ -76,6 +76,18 @@ function get(row, key) {
   const col = colMap[key] || key;
   return String(row[col] ?? "").replace(/\s+/g, " ").trim(); // gộp \r\n + space thừa
 }
+// Như get() nhưng GIỮ ký tự xuống hàng (\n) — để hiển thị tên nhiều dòng trên web.
+// Mỗi dòng vẫn được gộp space thừa + trim; bỏ dòng trống.
+function getLines(row, key) {
+  const colMap = { name: nameCol, company: companyCol, table: tableCol, title: titleCol, position: positionCol };
+  const col = colMap[key] || key;
+  return String(row[col] ?? "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .filter((line) => line !== "")
+    .join("\n");
+}
 function buildKey(row, seenCounts) {
   let base;
   if (idColumn) base = "id:" + String(row[idColumn] ?? "").trim();
@@ -127,7 +139,8 @@ for (const row of rows) {
     created++;
   }
 
-  const name = get(row, "name");
+  const name = get(row, "name"); // 1 dòng — dùng cho tên file QR + nhãn in
+  const nameDisplay = getLines(row, "name"); // giữ xuống hàng — dùng cho web/link
   const company = companyCol ? get(row, "company") : "";
   const table = tableCol && headers.includes(tableCol) ? get(row, "table") : "";
   const title = titleCol && headers.includes(titleCol) ? get(row, "title") : "";
@@ -137,7 +150,7 @@ for (const row of rows) {
 
   // Dữ liệu CÔNG KHAI cho web
   const stt = idColumn ? String(row[idColumn] ?? "").trim() : "";
-  const pub = { name };
+  const pub = { name: nameDisplay || name };
   if (title) pub.title = title;
   if (position) pub.position = position;
   if (company) pub.company = company;
@@ -151,6 +164,7 @@ for (const row of rows) {
     stt,
     title,
     name,
+    nameDisplay,
     position,
     company,
     table,
