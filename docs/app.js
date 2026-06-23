@@ -100,6 +100,12 @@
     const comp = document.getElementById("guestCompany");
     if (comp && comp.classList.contains("multiline")) fitWidth(comp, ".cline", 15, 11);
     else fitLines(comp, 2, 15, 11);
+    fitFooter();
+  }
+
+  // Footer: giảm cỡ chữ cho gọn trong tối đa 3 hàng.
+  function fitFooter() {
+    fitLines(document.getElementById("footer"), 3, 12.5, 9);
   }
 
   // Giảm dần cỡ chữ tới khi mọi dòng (đã nowrap) vừa bề ngang.
@@ -283,6 +289,7 @@
       cfg = await fetch("./config.json", { cache: "no-cache" }).then((r) => r.json());
     } catch (_) {}
     footer.textContent = cfg.footerNote || "";
+    fitFooter();
 
     const token = getToken();
     if (!token) {
