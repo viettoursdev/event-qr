@@ -7,7 +7,7 @@ export const config = {
   eventName: "Kỷ niệm Viettours 25 năm",
   eventSubtitle: "ÂN TÌNH VẠN DẶM",
   footerNote:
-    "Viettours hy vọng sẽ được chào đón và gặp gỡ Quý khách tại sự kiện.\nRất mong nhận được phản hồi của Quý Khách trước ngày 27/06. Mọi thông tin cần hỗ trợ, Quý khách vui lòng liên hệ số điện thoại: 0919 51 7777.",
+    "Viettours hy vọng được chào đón và gặp gỡ Quý khách tại sự kiện.\nRất mong nhận được phản hồi của Quý Khách trước 27/06. Mọi thông tin cần hỗ trợ, Quý khách vui lòng liên hệ hotline: 0919 51 7777.",
 
   // Hạn chót khách tự bấm "Xác nhận tham dự" trên trang QR. Sau mốc này nút bị KHOÁ.
   // Định dạng ISO kèm múi giờ VN (+07:00). Để "" nếu không giới hạn thời gian.
