@@ -49,12 +49,12 @@
       : `<div class="table-box pending">
            <div class="table-label">SỐ BÀN</div>
            <div class="pending-text">Đang cập nhật</div>
-           <div class="pending-sub">Quý khách vui lòng quét lại gần giờ sự kiện</div>
+           <div class="pending-sub">Thông tin sẽ được cập nhật vào 10:00 giờ ngày 29.06</div>
          </div>`;
     show(`
       <div class="event">${esc(cfg.eventName || "")}</div>
       <div class="subtitle">${esc(cfg.eventSubtitle || "")}</div>
-      <div class="greeting">Kính chào</div>
+      <div class="greeting">Trân trọng chào đón</div>
       ${g.title ? `<div class="honorific">${esc(g.title)}</div>` : ""}
       <h1 class="name${oneLine ? " oneline" : nameLines.length > 1 ? " multiline" : ""}" id="guestName">${
         oneLine
