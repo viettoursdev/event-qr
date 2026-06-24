@@ -12,6 +12,11 @@ match /event_guests/{id} {
     return request.auth != null
       && request.auth.token.firebase.sign_in_provider == 'password';
   }
+  // Tài khoản CHỈ XEM: đăng nhập + đọc được, nhưng KHÔNG được ghi bất kỳ trường nào.
+  function isViewer() {
+    return request.auth != null
+      && request.auth.token.email.lower() == 'checkin.viewonly@viettours.local';
+  }
   function changed() {
     return request.resource.data.diff(resource.data).affectedKeys();
   }
@@ -19,11 +24,13 @@ match /event_guests/{id} {
   // Chỉ nhân viên (đăng nhập Email/Password) đọc được — bảo vệ SĐT
   allow read: if isStaff();
 
-  allow update: if
+  // Tài khoản chỉ-xem bị chặn ghi hoàn toàn (kể cả nhánh khách QR, vì đã đăng nhập).
+  allow update: if !isViewer() && (
     // Nhân viên: sửa trường check-in / xác nhận / ăn chay
     (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt']))
     // Khách từ trang QR: chỉ sửa trường xác nhận / ăn chay (KHÔNG cần đăng nhập)
-    || changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt']);
+    || changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt'])
+  );
 
   // Thêm/xoá khách chỉ qua script admin (bỏ qua rules)
   allow create, delete: if false;

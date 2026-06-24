@@ -32,7 +32,9 @@ let confirmFilter = ""; // "" | "done" | "undone"
 let vegFilter = false; // chỉ hiện khách ăn chay
 let showDashboard = false; // bảng thống kê
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
+const VIEWONLY_EMAIL = "checkin.viewonly@viettours.local";
 let isAdmin = false;
+let isViewOnly = false; // tài khoản chỉ xem — không được chỉnh sửa
 let locks = { checkin: false, confirm: false, vegetarian: false }; // Admin khoá thao tác của Operations
 const lockedFor = (f) => locks[f] && !isAdmin; // Operations bị chặn nếu Admin khoá
 
@@ -197,6 +199,7 @@ async function doLogin() {
   if (!pin) return ($("loginError").textContent = "Vui lòng nhập mật khẩu.");
   localStorage.setItem("checkin.email", loginEmail);
   isAdmin = loginEmail.toLowerCase() === ADMIN_EMAIL;
+  isViewOnly = loginEmail.toLowerCase() === VIEWONLY_EMAIL;
   $("loginBtn").disabled = true;
   try {
     await store.login(loginEmail, pin);
@@ -216,12 +219,19 @@ function enterApp() {
   if (entered) return;
   entered = true;
   isAdmin = loginEmail.toLowerCase() === ADMIN_EMAIL; // cũng đúng khi tự vào lại phiên cũ
+  isViewOnly = loginEmail.toLowerCase() === VIEWONLY_EMAIL;
   $("login").hidden = true;
   $("app").hidden = false;
   $("stationTag").textContent = station || "—";
   if (isAdmin) {
     $("adminBar").hidden = false;
     $("stationTag").textContent = station + " · ADMIN";
+  }
+  if (isViewOnly) {
+    // Chỉ xem: gắn nhãn + ẩn các nút có thể chỉnh sửa (Nhập backup). Vẫn xem/tìm/lọc/thống kê/tải backup.
+    $("stationTag").textContent = station + " · CHỈ XEM";
+    $("btnImport").hidden = true;
+    $("importFile").disabled = true;
   }
   store.subscribe(onData);
   if (store.subscribeConfig) store.subscribeConfig(onLocks);
@@ -555,11 +565,12 @@ function card(g) {
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
       ${activityLog(g)}
     </div>
-    <div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}</div>
+    ${isViewOnly ? "" : `<div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}</div>`}
   </div>`;
 }
 
 async function toggleCheckin(id, on) {
+  if (isViewOnly) return flash("Tài khoản chỉ xem — không thể chỉnh sửa.", true);
   if (lockedFor("checkin")) return flash("Chức năng check-in đang bị Admin khoá.", true);
   const g = guests.find((x) => x.id === id);
   if (on && g && g.checkedIn) {
@@ -575,6 +586,7 @@ async function toggleCheckin(id, on) {
 }
 
 async function toggleVeg(id, on) {
+  if (isViewOnly) return flash("Tài khoản chỉ xem — không thể chỉnh sửa.", true);
   if (lockedFor("vegetarian")) return flash("Chức năng ăn chay đang bị Admin khoá.", true);
   const g = guests.find((x) => x.id === id);
   try {
@@ -586,6 +598,7 @@ async function toggleVeg(id, on) {
 }
 
 async function toggleConfirm(id, on) {
+  if (isViewOnly) return flash("Tài khoản chỉ xem — không thể chỉnh sửa.", true);
   if (lockedFor("confirm")) return flash("Chức năng xác nhận đang bị Admin khoá.", true);
   const g = guests.find((x) => x.id === id);
   try {
@@ -658,6 +671,7 @@ function parseCSV(text) {
 }
 
 async function importBackup(file) {
+  if (isViewOnly) return flash("Tài khoản chỉ xem — không thể chỉnh sửa.", true);
   let rows;
   try { rows = parseCSV(await file.text()); } catch (_) { return flash("Không đọc được file.", true); }
   if (rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
