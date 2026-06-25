@@ -30,6 +30,7 @@ let store = null; // lớp truy cập dữ liệu (demo hoặc firebase)
 let checkinFilter = ""; // "" | "done" | "undone"
 let confirmFilter = ""; // "" | "done" | "undone"
 let vegFilter = false; // chỉ hiện khách ăn chay
+let cancelFilter = false; // chỉ hiện khách xác nhận huỷ (không tham gia)
 let showDashboard = false; // bảng thống kê
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
 const VIEWONLY_EMAIL = "checkin.viewonly@viettours.local";
@@ -87,6 +88,15 @@ function makeDemoStore() {
         g.vegetarian = on;
         g.vegetarianAt = on ? new Date() : null;
         g.vegetarianVia = on ? station : null;
+      }
+      cb(data.slice());
+    },
+    async setCancel(id, on) {
+      const g = data.find((x) => x.id === id);
+      if (g) {
+        g.cancelled = on;
+        g.cancelledAt = on ? new Date() : null;
+        g.cancelledVia = on ? station : null;
       }
       cb(data.slice());
     },
@@ -156,6 +166,13 @@ async function makeFirebaseStore() {
         vegetarian: on,
         vegetarianAt: on ? serverTimestamp() : null,
         vegetarianVia: on ? station : null, // ghi máy lễ tân thao tác
+      });
+    },
+    async setCancel(id, on) {
+      await updateDoc(doc(db, collectionName, id), {
+        cancelled: on,
+        cancelledAt: on ? serverTimestamp() : null,
+        cancelledVia: on ? station : null, // ghi máy admin thao tác
       });
     },
     async restore(id, fields) {
@@ -273,6 +290,10 @@ function enterApp() {
     vegFilter = !vegFilter;
     render();
   });
+  $("fCancel").addEventListener("click", () => {
+    cancelFilter = !cancelFilter;
+    render();
+  });
   $("btnDash").addEventListener("click", () => {
     showDashboard = !showDashboard;
     $("btnDash").classList.toggle("active", showDashboard);
@@ -325,14 +346,15 @@ function bindAdminBar() {
 
 async function resetAll() {
   if (!isAdmin) return;
-  const dirty = guests.filter((g) => g.checkedIn || g.confirmed || g.vegetarian);
+  const dirty = guests.filter((g) => g.checkedIn || g.confirmed || g.vegetarian || g.cancelled);
   if (!dirty.length) return flash("Tất cả đã ở trạng thái 0 — không cần reset.");
-  if (!confirm(`⚠️ XOÁ TOÀN BỘ check-in / xác nhận / ăn chay của ${dirty.length} khách về 0?\n\nKhông thể hoàn tác. (Nên bấm "⬇ Backup" trước.)`)) return;
+  if (!confirm(`⚠️ XOÁ TOÀN BỘ check-in / xác nhận / ăn chay / xác nhận huỷ của ${dirty.length} khách về 0?\n\nKhông thể hoàn tác. (Nên bấm "⬇ Backup" trước.)`)) return;
   if (!confirm(`Xác nhận LẦN CUỐI: reset ${dirty.length} khách về 0?`)) return;
   const clear = {
     checkedIn: false, checkinAt: null, checkinBy: null,
     confirmed: false, confirmedAt: null, confirmedVia: null,
     vegetarian: false, vegetarianAt: null, vegetarianVia: null,
+    cancelled: false, cancelledAt: null, cancelledVia: null,
   };
   flash(`Đang reset ${dirty.length} khách…`);
   let ok = 0;
@@ -371,6 +393,7 @@ function onData(arr) {
   setChip("cCfmDone", conf);
   setChip("cCfmUndone", guests.length - conf);
   setChip("cVeg", guests.filter((g) => g.vegetarian).length);
+  setChip("cCancel", guests.filter((g) => g.cancelled).length);
   render();
 }
 
@@ -411,13 +434,15 @@ function render() {
   $("fCfmDone").classList.toggle("active", confirmFilter === "done");
   $("fCfmUndone").classList.toggle("active", confirmFilter === "undone");
   $("fVeg").classList.toggle("active", vegFilter);
-  const anyFilter = checkinFilter || confirmFilter || vegFilter;
+  $("fCancel").classList.toggle("active", cancelFilter);
+  const anyFilter = checkinFilter || confirmFilter || vegFilter || cancelFilter;
 
   // nhãn các bộ lọc đang bật
   const fl = [];
   if (checkinFilter) fl.push(checkinFilter === "done" ? "đã check-in" : "chưa check-in");
   if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
   if (vegFilter) fl.push("ăn chay");
+  if (cancelFilter) fl.push("xác nhận huỷ");
 
   const hasQ = !!q.trim();
   const hasStt = !!qStt;
@@ -435,6 +460,7 @@ function render() {
   if (checkinFilter) list = list.filter((g) => (checkinFilter === "done" ? g.checkedIn : !g.checkedIn));
   if (confirmFilter) list = list.filter((g) => (confirmFilter === "done" ? g.confirmed : !g.confirmed));
   if (vegFilter) list = list.filter((g) => g.vegetarian);
+  if (cancelFilter) list = list.filter((g) => g.cancelled);
 
   if (list.length === 0) {
     const term = hasStt ? `STT “${esc(qStt)}”` : `“${esc(q)}”`;
@@ -471,6 +497,12 @@ function render() {
   );
   box.querySelectorAll("[data-unveg]").forEach((btn) =>
     btn.addEventListener("click", () => toggleVeg(btn.getAttribute("data-unveg"), false))
+  );
+  box.querySelectorAll("[data-cancel]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleCancel(btn.getAttribute("data-cancel"), true))
+  );
+  box.querySelectorAll("[data-uncancel]").forEach((btn) =>
+    btn.addEventListener("click", () => toggleCancel(btn.getAttribute("data-uncancel"), false))
   );
 }
 
@@ -526,6 +558,7 @@ function activityLog(g) {
   if (g.checkedIn) lines.push(`✓ Check-in · ${fmtTime(g.checkinAt) || "—"}${g.checkinBy ? " · 🖥 " + esc(g.checkinBy) : ""}`);
   if (g.confirmed) lines.push(`✓ Xác nhận · ${fmtTime(g.confirmedAt) || "—"} · 🖥 ${viaLabel(g.confirmedVia)}`);
   if (g.vegetarian) lines.push(`🥗 Ăn chay · ${fmtTime(g.vegetarianAt) || "—"} · 🖥 ${viaLabel(g.vegetarianVia)}`);
+  if (g.cancelled) lines.push(`✕ Xác nhận huỷ · ${fmtTime(g.cancelledAt) || "—"} · 🖥 ${viaLabel(g.cancelledVia)}`);
   return lines.length ? `<div class="activity">${lines.map((l) => `<div>${l}</div>`).join("")}</div>` : "";
 }
 
@@ -533,6 +566,9 @@ function confirmBadge(g) {
   return g.confirmed
     ? `<span class="badge confirm-yes">✓ Đã xác nhận</span>`
     : `<span class="badge confirm-no">Chưa xác nhận</span>`;
+}
+function cancelBadge(g) {
+  return g.cancelled ? `<span class="badge cancel-yes">✕ Đã huỷ</span>` : "";
 }
 // thuộc tính disabled nếu Admin đang khoá tính năng (chỉ áp dụng cho Operations)
 const dis = (f) => (lockedFor(f) ? ' disabled title="Admin đang khoá tính năng này"' : "");
@@ -547,6 +583,12 @@ function vegBtn(g) {
     ? `<button class="btn-veg on" data-unveg="${esc(g.id)}"${dis("vegetarian")}>Bỏ ăn chay</button>`
     : `<button class="btn-veg" data-veg="${esc(g.id)}"${dis("vegetarian")}>Ăn chay</button>`;
 }
+// Nút "Xác nhận huỷ" — CHỈ admin mới thấy & thao tác (đánh dấu khách báo không tham gia)
+function cancelBtn(g) {
+  return g.cancelled
+    ? `<button class="btn-cancel on" data-uncancel="${esc(g.id)}">Bỏ huỷ</button>`
+    : `<button class="btn-cancel" data-cancel="${esc(g.id)}">Xác nhận huỷ</button>`;
+}
 
 function card(g) {
   const phone = g.phone ? esc(g.phone) : "—";
@@ -556,16 +598,21 @@ function card(g) {
     : `<button class="btn-checkin" data-checkin="${esc(g.id)}"${dis("checkin")}>Check-in</button>`;
   const ciTag = g.checkedIn ? `<span class="badge ok">✓ Đã check-in</span> ` : "";
   const vegTag = g.vegetarian ? ` <span class="badge veg-yes">🥗 Ăn chay</span>` : "";
+  const cancelTag = g.cancelled ? ` ${cancelBadge(g)}` : "";
   const sttTag = g.stt !== "" && g.stt != null ? `<span class="stt-tag">STT ${esc(g.stt)}</span> ` : "";
   const sub = [g.position, g.company].filter(Boolean).map(esc).join(" · ");
-  return `<div class="card${g.checkedIn ? " done" : ""}">
+  // khách xác nhận huỷ -> thẻ highlight đỏ (ưu tiên hơn nền "đã check-in")
+  const cardCls = g.cancelled ? " cancelled" : g.checkedIn ? " done" : "";
+  // nút Xác nhận huỷ nằm DƯỚI nút Check-in, chỉ admin mới thấy
+  const cancelAction = isAdmin ? cancelBtn(g) : "";
+  return `<div class="card${cardCls}">
     <div class="card-main">
-      <div class="name">${sttTag}${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}</div>
+      <div class="name">${sttTag}${esc(g.name)} ${ciTag}${confirmBadge(g)}${vegTag}${cancelTag}</div>
       ${sub ? `<div class="sub">${sub}</div>` : ""}
       <div class="meta"><span>📞 ${phone}</span><span>🍽 ${table}</span></div>
       ${activityLog(g)}
     </div>
-    ${isViewOnly ? "" : `<div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}</div>`}
+    ${isViewOnly ? "" : `<div class="card-actions">${confirmBtn(g)}${vegBtn(g)}${ciBtn}${cancelAction}</div>`}
   </div>`;
 }
 
@@ -609,6 +656,19 @@ async function toggleConfirm(id, on) {
   }
 }
 
+// Xác nhận huỷ (khách báo KHÔNG tham gia) — CHỈ admin được thao tác
+async function toggleCancel(id, on) {
+  if (!isAdmin) return flash("Chỉ tài khoản admin mới được xác nhận huỷ.", true);
+  const g = guests.find((x) => x.id === id);
+  if (on && !confirm(`Đánh dấu khách "${g ? g.name : ""}" XÁC NHẬN HUỶ (không tham gia)?`)) return;
+  try {
+    await store.setCancel(id, on);
+    if (g) flash(on ? `✕ Đã đánh dấu huỷ (không tham gia): ${g.name}` : `Đã bỏ đánh dấu huỷ: ${g.name}`);
+  } catch (e) {
+    flash("Lỗi khi lưu, vui lòng thử lại.", true);
+  }
+}
+
 let flashTimer;
 function flash(msg, isError) {
   const bar = $("statusbar");
@@ -629,7 +689,7 @@ const toISO = (t) => {
 };
 
 function exportBackup() {
-  const cols = ["STT", "Tên khách", "Đơn vị", "SĐT", "Số bàn", "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "Ăn chay", "_checkinAtISO", "_confirmedAtISO"];
+  const cols = ["STT", "Tên khách", "Đơn vị", "SĐT", "Số bàn", "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "Ăn chay", "Xác nhận huỷ", "_checkinAtISO", "_confirmedAtISO"];
   const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
   const list = guests.slice().sort((a, b) => (Number(a.stt) || 0) - (Number(b.stt) || 0));
   const lines = [cols.join(",")];
@@ -637,7 +697,7 @@ function exportBackup() {
     lines.push(
       [g.stt || "", g.name || "", g.company || "", g.phone || "", g.table || "",
        g.checkedIn ? "Có" : "Không", g.checkedIn ? fmtTime(g.checkinAt) : "", g.checkedIn ? g.checkinBy || "" : "",
-       g.confirmed ? "Có" : "Không", g.vegetarian ? "Có" : "Không", toISO(g.checkinAt), toISO(g.confirmedAt)].map(q).join(",")
+       g.confirmed ? "Có" : "Không", g.vegetarian ? "Có" : "Không", g.cancelled ? "Có" : "Không", toISO(g.checkinAt), toISO(g.confirmedAt)].map(q).join(",")
     );
   }
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -677,7 +737,7 @@ async function importBackup(file) {
   if (rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
   const h = rows[0].map((x) => x.trim());
   const I = (name) => h.indexOf(name);
-  const iStt = I("STT"), iChk = I("Đã check-in"), iCfm = I("Đã xác nhận"), iVeg = I("Ăn chay");
+  const iStt = I("STT"), iChk = I("Đã check-in"), iCfm = I("Đã xác nhận"), iVeg = I("Ăn chay"), iCxl = I("Xác nhận huỷ");
   const iBy = I("Quầy"), iChkAt = I("_checkinAtISO"), iCfmAt = I("_confirmedAtISO");
   if (iStt < 0 || iChk < 0 || iCfm < 0) return flash("File không đúng định dạng backup (thiếu cột).", true);
 
@@ -691,7 +751,8 @@ async function importBackup(file) {
     const checkedIn = (row[iChk] || "").trim() === "Có";
     const confirmed = (row[iCfm] || "").trim() === "Có";
     const vegetarian = iVeg >= 0 ? (row[iVeg] || "").trim() === "Có" : !!g.vegetarian;
-    if (!!g.checkedIn === checkedIn && !!g.confirmed === confirmed && !!g.vegetarian === vegetarian) continue; // không đổi -> bỏ
+    const cancelled = iCxl >= 0 ? (row[iCxl] || "").trim() === "Có" : !!g.cancelled;
+    if (!!g.checkedIn === checkedIn && !!g.confirmed === confirmed && !!g.vegetarian === vegetarian && !!g.cancelled === cancelled) continue; // không đổi -> bỏ
     const chkISO = iChkAt >= 0 ? (row[iChkAt] || "").trim() : "";
     const cfmISO = iCfmAt >= 0 ? (row[iCfmAt] || "").trim() : "";
     updates.push({
@@ -706,6 +767,9 @@ async function importBackup(file) {
         vegetarian,
         vegetarianAt: vegetarian ? new Date() : null,
         vegetarianVia: vegetarian ? "restore" : null,
+        cancelled,
+        cancelledAt: cancelled ? new Date() : null,
+        cancelledVia: cancelled ? "restore" : null,
       },
     });
   }

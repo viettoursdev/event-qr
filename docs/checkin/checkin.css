@@ -90,6 +90,8 @@ body {
 }
 .chip b { font-weight: 800; }
 .chip.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+.chip-cancel { color: #b91c1c; border-color: #fca5a5; }
+.chip-cancel.active { background: #dc2626; color: #fff; border-color: #dc2626; }
 
 .results { flex: 1; padding: 6px 16px 90px; max-width: 720px; width: 100%; margin: 0 auto; }
 
@@ -117,6 +119,7 @@ body {
   padding: 14px 14px 14px 16px; margin-bottom: 10px;
 }
 .card.done { background: var(--ok-bg); border-color: #b9ecd6; }
+.card.cancelled { background: #fef2f2; border-color: #fca5a5; box-shadow: inset 4px 0 0 #dc2626; }
 .card-main { flex: 1; min-width: 0; }
 .name { font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
@@ -131,6 +134,7 @@ body {
 .badge.confirm-yes { background: var(--teal-tint); color: var(--teal-dark); border: 1px solid #bfe3e3; }
 .badge.confirm-no { background: #fef3f2; color: #b42318; border: 1px solid #fcdcd7; }
 .badge.veg-yes { background: #ecfdf3; color: #15803d; border: 1px solid #bbf7d0; }
+.badge.cancel-yes { background: #dc2626; color: #fff; border: 1px solid #dc2626; }
 
 /* ---------- Nút ăn chay (lễ tân) ---------- */
 .btn-veg {
@@ -165,6 +169,14 @@ body {
 }
 .btn-confirm:active { transform: scale(.97); }
 .btn-confirm.on { color: var(--muted); background: #fff; border-color: var(--line); font-weight: 600; }
+
+/* ---------- Nút Xác nhận huỷ (chỉ admin) ---------- */
+.btn-cancel {
+  padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  color: #b91c1c; background: #fff; border: 1.5px solid #f87171; border-radius: 10px;
+}
+.btn-cancel:active { transform: scale(.97); }
+.btn-cancel.on { color: #fff; background: #dc2626; border-color: #dc2626; }
 
 .btn-checkin {
   flex-shrink: 0; padding: 12px 18px; font-size: 15px; font-weight: 700; color: #fff;
