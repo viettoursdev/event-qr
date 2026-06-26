@@ -341,30 +341,6 @@ function bindAdminBar() {
   $("lockCheckin").addEventListener("click", tog("checkin"));
   $("lockConfirm").addEventListener("click", tog("confirm"));
   $("lockVeg").addEventListener("click", tog("vegetarian"));
-  $("btnResetAll").addEventListener("click", resetAll);
-}
-
-async function resetAll() {
-  if (!isAdmin) return;
-  const dirty = guests.filter((g) => g.checkedIn || g.confirmed || g.vegetarian || g.cancelled);
-  if (!dirty.length) return flash("Tất cả đã ở trạng thái 0 — không cần reset.");
-  if (!confirm(`⚠️ XOÁ TOÀN BỘ check-in / xác nhận / ăn chay / xác nhận huỷ của ${dirty.length} khách về 0?\n\nKhông thể hoàn tác. (Nên bấm "⬇ Backup" trước.)`)) return;
-  if (!confirm(`Xác nhận LẦN CUỐI: reset ${dirty.length} khách về 0?`)) return;
-  const clear = {
-    checkedIn: false, checkinAt: null, checkinBy: null,
-    confirmed: false, confirmedAt: null, confirmedVia: null,
-    vegetarian: false, vegetarianAt: null, vegetarianVia: null,
-    cancelled: false, cancelledAt: null, cancelledVia: null,
-  };
-  flash(`Đang reset ${dirty.length} khách…`);
-  let ok = 0;
-  for (const g of dirty) {
-    try {
-      await store.restore(g.id, clear);
-      ok++;
-    } catch (_) {}
-  }
-  flash(`✓ Đã reset ${ok}/${dirty.length} khách về 0.`, ok < dirty.length);
 }
 
 // ========================================================
