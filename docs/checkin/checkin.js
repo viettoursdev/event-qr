@@ -31,6 +31,7 @@ let checkinFilter = ""; // "" | "done" | "undone"
 let confirmFilter = ""; // "" | "done" | "undone"
 let vegFilter = false; // chỉ hiện khách ăn chay
 let cancelFilter = false; // chỉ hiện khách xác nhận huỷ (không tham gia)
+let tableFilter = ""; // "" = tất cả; hoặc 1 số bàn cụ thể
 let showDashboard = false; // bảng thống kê
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
 const VIEWONLY_EMAIL = "checkin.viewonly@viettours.local";
@@ -294,6 +295,10 @@ function enterApp() {
     cancelFilter = !cancelFilter;
     render();
   });
+  $("fTable").addEventListener("change", (e) => {
+    tableFilter = e.target.value;
+    render();
+  });
   $("btnDash").addEventListener("click", () => {
     showDashboard = !showDashboard;
     $("btnDash").classList.toggle("active", showDashboard);
@@ -370,7 +375,27 @@ function onData(arr) {
   setChip("cCfmUndone", guests.length - conf);
   setChip("cVeg", guests.filter((g) => g.vegetarian).length);
   setChip("cCancel", guests.filter((g) => g.cancelled).length);
+  populateTableFilter();
   render();
+}
+
+// Đổ danh sách số bàn (duy nhất) vào dropdown lọc; giữ lựa chọn hiện tại nếu còn hợp lệ.
+function populateTableFilter() {
+  const sel = $("fTable");
+  if (!sel) return;
+  const tables = [...new Set(guests.map((g) => String(g.table == null ? "" : g.table).trim()).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" })
+  );
+  if (tableFilter && !tables.includes(tableFilter)) tableFilter = ""; // bàn đã biến mất -> bỏ lọc
+  const counts = {};
+  guests.forEach((g) => {
+    const t = String(g.table == null ? "" : g.table).trim();
+    if (t) counts[t] = (counts[t] || 0) + 1;
+  });
+  sel.innerHTML =
+    `<option value="">🍽 Tất cả bàn</option>` +
+    tables.map((t) => `<option value="${esc(t)}">Bàn ${esc(t)} (${counts[t]})</option>`).join("");
+  sel.value = tableFilter;
 }
 
 // Ô tìm thường: chỉ tên / công ty / SĐT (KHÔNG tìm theo STT)
@@ -411,7 +436,9 @@ function render() {
   $("fCfmUndone").classList.toggle("active", confirmFilter === "undone");
   $("fVeg").classList.toggle("active", vegFilter);
   $("fCancel").classList.toggle("active", cancelFilter);
-  const anyFilter = checkinFilter || confirmFilter || vegFilter || cancelFilter;
+  $("fTable").classList.toggle("active", !!tableFilter);
+  if ($("fTable").value !== tableFilter) $("fTable").value = tableFilter;
+  const anyFilter = checkinFilter || confirmFilter || vegFilter || cancelFilter || tableFilter;
 
   // nhãn các bộ lọc đang bật
   const fl = [];
@@ -419,6 +446,7 @@ function render() {
   if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
   if (vegFilter) fl.push("ăn chay");
   if (cancelFilter) fl.push("xác nhận huỷ");
+  if (tableFilter) fl.push("bàn " + tableFilter);
 
   const hasQ = !!q.trim();
   const hasStt = !!qStt;
@@ -437,6 +465,7 @@ function render() {
   if (confirmFilter) list = list.filter((g) => (confirmFilter === "done" ? g.confirmed : !g.confirmed));
   if (vegFilter) list = list.filter((g) => g.vegetarian);
   if (cancelFilter) list = list.filter((g) => g.cancelled);
+  if (tableFilter) list = list.filter((g) => String(g.table == null ? "" : g.table).trim() === tableFilter);
 
   if (list.length === 0) {
     const term = hasStt ? `STT “${esc(qStt)}”` : `“${esc(q)}”`;

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Check-in khách mời</title>
-    <link rel="stylesheet" href="./checkin.css?v=2" />
+    <link rel="stylesheet" href="./checkin.css?v=3" />
   </head>
   <body>
     <!-- Màn hình đăng nhập -->
@@ -83,12 +83,15 @@
         <button id="fCfmUndone" class="chip" type="button">Chưa xác nhận <b id="cCfmUndone"></b></button>
         <button id="fVeg" class="chip" type="button">🥗 Ăn chay <b id="cVeg"></b></button>
         <button id="fCancel" class="chip chip-cancel" type="button">✕ Xác nhận huỷ <b id="cCancel"></b></button>
+        <select id="fTable" class="chip chip-select" title="Lọc theo số bàn">
+          <option value="">🍽 Tất cả bàn</option>
+        </select>
       </div>
 
       <div id="results" class="results"></div>
       <div id="statusbar" class="statusbar" hidden></div>
     </section>
 
-    <script type="module" src="./checkin.js?v=14"></script>
+    <script type="module" src="./checkin.js?v=15"></script>
   </body>
 </html>
