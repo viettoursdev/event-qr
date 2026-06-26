@@ -32,6 +32,9 @@ let confirmFilter = ""; // "" | "done" | "undone"
 let vegFilter = false; // chỉ hiện khách ăn chay
 let cancelFilter = false; // chỉ hiện khách xác nhận huỷ (không tham gia)
 let tableFilter = ""; // "" = tất cả; hoặc 1 số bàn cụ thể
+let page = 0; // trang hiện tại (0-based), mỗi trang 100 khách
+let showAll = false; // hiện toàn bộ danh sách (không phân trang)
+let lastSig = ""; // chữ ký bộ lọc/tìm kiếm gần nhất -> đổi thì về trang đầu
 let showDashboard = false; // bảng thống kê
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
 const VIEWONLY_EMAIL = "checkin.viewonly@viettours.local";
@@ -420,6 +423,20 @@ function sttMatch(g, qStt) {
   return stt !== "" && (stt === qStt || stt.startsWith(qStt));
 }
 
+// Thanh phân trang: Trước / Trang x/y / Sau · và nút Xem tất cả <-> Xem theo trang
+function pagerHtml(page, pageCount, total, showAll) {
+  if (showAll) {
+    return `<div class="pager"><span class="pager-info">Đang hiện tất cả ${total} khách</span>
+      <button class="pager-btn" data-page="paged">📄 Xem theo trang (100/trang)</button></div>`;
+  }
+  return `<div class="pager">
+    <button class="pager-btn" data-page="prev"${page <= 0 ? " disabled" : ""}>‹ Trước</button>
+    <span class="pager-info">Trang ${page + 1}/${pageCount}</span>
+    <button class="pager-btn" data-page="next"${page >= pageCount - 1 ? " disabled" : ""}>Sau ›</button>
+    <button class="pager-btn pager-all" data-page="all">📋 Xem tất cả (${total})</button>
+  </div>`;
+}
+
 function render() {
   const q = $("search").value;
   const qStt = $("searchStt").value.trim();
@@ -474,16 +491,31 @@ function render() {
     return;
   }
 
-  const cap = 100;
+  const PER = 100;
+  const total = list.length;
+  // Đổi bộ lọc / tìm kiếm -> về trang đầu. Re-render do thao tác khác (check-in…) thì GIỮ trang.
+  const sig = JSON.stringify([q.trim(), qStt, checkinFilter, confirmFilter, vegFilter, cancelFilter, tableFilter]);
+  if (sig !== lastSig) {
+    page = 0;
+    showAll = false;
+    lastSig = sig;
+  }
+  const pageCount = Math.max(1, Math.ceil(total / PER));
+  if (page >= pageCount) page = pageCount - 1;
+  const slice = showAll ? list : list.slice(page * PER, page * PER + PER);
+
   const dup = (hasQ || hasStt) && list.length > 1;
   let label;
   if (hasQ || hasStt) {
-    label = `${list.length} kết quả${fl.length ? ` · lọc: ${fl.join(" & ")}` : dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
+    label = `${total} kết quả${fl.length ? ` · lọc: ${fl.join(" & ")}` : dup ? " — chọn đúng khách (trùng tên thì xem công ty / SĐT / bàn)" : ""}`;
   } else {
-    label = `${list.length} khách ${fl.join(" & ")}`;
+    label = `${total} khách ${fl.join(" & ")}`;
   }
-  const head = `<div class="result-head">${label}${list.length > cap ? ` (hiện ${cap} đầu)` : ""}</div>`;
-  box.innerHTML = head + list.slice(0, cap).map(card).join("");
+  let viewNote = "";
+  if (total > PER) viewNote = showAll ? ` · hiện tất cả ${total}` : ` · trang ${page + 1}/${pageCount} (${slice.length} khách)`;
+  const head = `<div class="result-head">${label}${viewNote}</div>`;
+  const pager = total > PER ? pagerHtml(page, pageCount, total, showAll) : "";
+  box.innerHTML = head + pager + slice.map(card).join("") + (slice.length > 8 ? pager : "");
 
   box.querySelectorAll("[data-checkin]").forEach((btn) =>
     btn.addEventListener("click", () => toggleCheckin(btn.getAttribute("data-checkin"), true))
@@ -508,6 +540,20 @@ function render() {
   );
   box.querySelectorAll("[data-uncancel]").forEach((btn) =>
     btn.addEventListener("click", () => toggleCancel(btn.getAttribute("data-uncancel"), false))
+  );
+  box.querySelectorAll("[data-page]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const a = b.getAttribute("data-page");
+      if (a === "prev") page = Math.max(0, page - 1);
+      else if (a === "next") page = page + 1; // render() sẽ kẹp trong giới hạn
+      else if (a === "all") showAll = true;
+      else if (a === "paged") {
+        showAll = false;
+        page = 0;
+      }
+      render();
+      box.scrollIntoView({ block: "start", behavior: "smooth" });
+    })
   );
 }
 
