@@ -26,8 +26,9 @@ match /event_guests/{id} {
 
   // Tài khoản chỉ-xem bị chặn ghi hoàn toàn (kể cả nhánh khách QR, vì đã đăng nhập).
   allow update: if !isViewer() && (
-    // Nhân viên: sửa trường check-in / xác nhận / ăn chay
-    (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt']))
+    // Nhân viên: sửa trường check-in / xác nhận / ăn chay / xác nhận huỷ
+    // (nút "Xác nhận huỷ" chỉ admin thao tác — chặn ở tầng app; rules cho phép staff để Reset/Nhập backup ghi kèm cancelled)
+    (isStaff() && changed().hasOnly(['checkedIn', 'checkinAt', 'checkinBy', 'confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt', 'cancelled', 'cancelledAt', 'cancelledVia']))
     // Khách từ trang QR: chỉ sửa trường xác nhận / ăn chay (KHÔNG cần đăng nhập)
     || changed().hasOnly(['confirmed', 'confirmedAt', 'confirmedVia', 'vegetarian', 'vegetarianVia', 'vegetarianAt'])
   );
