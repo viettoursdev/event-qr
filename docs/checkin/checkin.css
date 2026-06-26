@@ -96,7 +96,8 @@ body {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230b3b3b' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
   background-repeat: no-repeat; background-position: right 11px center; }
 .chip-select.active { background-color: var(--teal); color: #fff; border-color: var(--teal);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>"); }
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 11px center; }
 
 .results { flex: 1; padding: 6px 16px 90px; max-width: 720px; width: 100%; margin: 0 auto; }
 
