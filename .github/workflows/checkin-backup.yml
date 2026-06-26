@@ -1,0 +1,93 @@
+# checkin-backup.yml
+#
+# Sao lưu HẰNG NGÀY collection check-in (Firestore `event_guests`) ra JSON rồi
+# đẩy lên Cloudflare R2. Lớp dự phòng cho launchd trên máy Mac (chạy kể cả khi
+# máy tắt). CHỈ ĐỌC Firestore — không bao giờ ghi/xoá.
+#
+# Secrets cần đặt (event-qr repo → Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT — DÁN TOÀN BỘ nội dung file private/serviceAccount.json.
+#   R2_ACCESS_KEY_ID         — R2 S3 API access key id (scope: bucket dưới đây).
+#   R2_SECRET_ACCESS_KEY     — R2 S3 API secret.
+#   R2_ENDPOINT              — https://<accountid>.r2.cloudflarestorage.com
+#   R2_BUCKET                — tên bucket (vd: viettours-db-backups). Backup vào
+#                              prefix event-qr-checkin/ trong bucket này.
+#
+# ⚠️ Repo này là PUBLIC: KHÔNG bao giờ commit serviceAccount.json hay file backup
+#    (chứa SĐT khách). File backup chỉ sống trong runner rồi lên R2 — không lưu
+#    làm artifact public.
+
+name: Check-in Backup (Firestore)
+
+on:
+  schedule:
+    - cron: '30 5 * * *'   # 05:30 UTC = 12:30 giờ VN, hằng ngày
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checkin-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Preflight — verify secrets
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          missing=()
+          [ -n "$SA" ]                    || missing+=("FIREBASE_SERVICE_ACCOUNT")
+          [ -n "$AWS_ACCESS_KEY_ID" ]     || missing+=("R2_ACCESS_KEY_ID")
+          [ -n "$AWS_SECRET_ACCESS_KEY" ] || missing+=("R2_SECRET_ACCESS_KEY")
+          [ -n "$R2_ENDPOINT" ]           || missing+=("R2_ENDPOINT")
+          [ -n "$R2_BUCKET" ]             || missing+=("R2_BUCKET")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Thiếu secret: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Write service account
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          mkdir -p private
+          printf '%s' "$SA" > private/serviceAccount.json
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund firebase-admin
+
+      - name: Backup collection → JSON
+        run: npm run checkin:backup
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          STAMP="$(date -u +%Y/%m/%d)"
+          for f in private/backups/*.json; do
+            [ -e "$f" ] || continue
+            gzip -9 -c "$f" > "$f.gz"
+            aws s3 cp "$f.gz" "s3://$R2_BUCKET/event-qr-checkin/$STAMP/$(basename "$f").gz" \
+              --endpoint-url "$R2_ENDPOINT"
+          done
+
+      - name: Scrub secrets + data
+        if: always()
+        run: rm -rf private

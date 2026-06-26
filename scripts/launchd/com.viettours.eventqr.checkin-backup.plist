@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd job: sao lưu collection check-in (Firestore) mỗi ngày lúc 12:30 trưa.
+  Cài đặt (chạy 1 lần):
+    cp "/Users/tuanhoang/Documents/1. Code/event-qr/scripts/launchd/com.viettours.eventqr.checkin-backup.plist" ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.viettours.eventqr.checkin-backup.plist
+  Chạy thử ngay:
+    launchctl start com.viettours.eventqr.checkin-backup
+  Gỡ:
+    launchctl unload ~/Library/LaunchAgents/com.viettours.eventqr.checkin-backup.plist
+  Xem log: private/backups/_cron.log  và  _cron.err
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.viettours.eventqr.checkin-backup</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/tuanhoang/Documents/1. Code/event-qr/scripts/checkin-backup.mjs</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/tuanhoang/Documents/1. Code/event-qr</string>
+
+  <!-- Chạy mỗi ngày lúc 12:30. Nếu lúc đó máy tắt/ngủ, launchd sẽ chạy bù khi máy bật lại. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>12</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/tuanhoang/Documents/1. Code/event-qr/private/backups/_cron.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tuanhoang/Documents/1. Code/event-qr/private/backups/_cron.err</string>
+</dict>
+</plist>

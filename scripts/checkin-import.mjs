@@ -10,10 +10,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import XLSX from "xlsx";
 import admin from "firebase-admin";
 import { config } from "../config.mjs";
+import { backupCollection } from "./checkin-backup.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const p = (...x) => path.join(root, ...x);
@@ -56,6 +58,24 @@ const OVERWRITE = /^(1|true|yes)$/i.test(process.env.OVERWRITE || "");
 
 let existing = new Map();
 if (OVERWRITE) {
+  // 🛡️ AN TOÀN: luôn sao lưu collection RA FILE trước khi xoá bất cứ thứ gì.
+  const { file, count } = await backupCollection(db, cfg.collection, "pre-overwrite");
+  console.log(`\n🛡️  Đã sao lưu ${count} doc trước khi GHI ĐÈ → ${path.relative(root, file)}`);
+
+  // 🛡️ AN TOÀN: bắt buộc gõ xác nhận (trừ khi FORCE=1, dùng cho tự động hoá).
+  const FORCE = /^(1|true|yes)$/i.test(process.env.FORCE || "");
+  if (!FORCE) {
+    console.log(`\n⚠️  GHI ĐÈ sẽ XOÁ SẠCH collection "${cfg.collection}" và RESET mọi trạng thái`);
+    console.log(`   check-in / xác nhận / ăn chay. Dữ liệu sống thu tại sự kiện sẽ MẤT.`);
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const ans = await rl.question(`\n   Gõ đúng tên collection "${cfg.collection}" để xác nhận xoá: `);
+    rl.close();
+    if (ans.trim() !== cfg.collection) {
+      console.log(`\n❌ Đã HUỶ (không khớp). Không có gì bị xoá. Backup vẫn ở: ${path.relative(root, file)}\n`);
+      process.exit(1);
+    }
+  }
+
   let cleared = 0;
   while (true) {
     const s = await db.collection(cfg.collection).limit(400).get();
