@@ -119,6 +119,29 @@ body {
 .stat-num { font-size: 28px; font-weight: 800; color: var(--teal); line-height: 1; }
 .stat-label { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
 .dash-subhead { font-size: 14px; font-weight: 700; color: var(--ink); margin: 18px 2px 8px; }
+.dash-note { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+/* ── Biểu đồ cột số khách / bàn ── */
+.bar-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 2px 10px; }
+.bar-summary .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--ink);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+.bar-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 2px 12px; font-size: 12.5px; color: var(--muted); }
+.bar-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 13px; height: 13px; border-radius: 4px; display: inline-block; flex: none; }
+.bar-wrap { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 12px; overflow-x: auto; }
+.bar-chart { display: flex; align-items: flex-end; gap: 7px; position: relative; min-width: min-content; padding-top: 8px; }
+.bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: calc(var(--h) + 52px); }
+.bar-num { font-size: 12px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+.bar { width: 26px; min-height: 5px; border-radius: 6px 6px 0 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.10); transition: height .3s ease; }
+.bar:hover { filter: brightness(1.07); }
+.bar-lbl { width: 34px; height: 26px; margin-top: 7px; font-size: 11px; line-height: 1.15; color: var(--muted);
+  text-align: center; display: flex; align-items: flex-start; justify-content: center; word-break: break-word; }
+.target-line { position: absolute; left: 0; right: 0; border-top: 2px dashed #94a3b8; pointer-events: none; }
+.target-line span { position: absolute; right: 2px; top: -9px; background: #fff; padding: 0 6px; font-size: 10.5px; font-weight: 700; color: #64748b; }
+.bar[data-band="low"],  .sw[data-band="low"]  { background: #F2B705; }   /* ≤7 vàng */
+.bar[data-band="mid"],  .sw[data-band="mid"]  { background: #E8590C; }   /* 8-9 cam đậm */
+.bar[data-band="ok"],   .sw[data-band="ok"]   { background: var(--teal); } /* 10 xanh Viettours */
+.bar[data-band="over"], .sw[data-band="over"] { background: #E03131; }   /* ≥11 đỏ */
 .dash-tablewrap { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 .dash-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .dash-table th, .dash-table td { padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--line); }

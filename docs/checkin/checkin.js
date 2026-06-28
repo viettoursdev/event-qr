@@ -586,6 +586,49 @@ function renderDashboard() {
     ${statCard("Đã xác nhận", cf, pct(cf))}
     ${statCard("Ăn chay", veg, "")}
   </div>`;
+
+  // ── Biểu đồ cột: số khách (KHÔNG tính khách huỷ) mỗi bàn ──
+  const tcount = new Map();
+  for (const g of guests) {
+    if (g.cancelled) continue; // khách huỷ không chiếm chỗ
+    const t = String(g.table == null ? "" : g.table).trim();
+    if (!t || t === "(chưa xếp bàn)" || /^(cancelled|later)$/i.test(t)) continue; // chỉ bàn thật
+    tcount.set(t, (tcount.get(t) || 0) + 1);
+  }
+  const chartTables = [...tcount.entries()].sort((a, b) => a[0].localeCompare(b[0], "vi", { numeric: true }));
+  const band = (n) => (n >= 11 ? "over" : n === 10 ? "ok" : n >= 8 ? "mid" : "low"); // ≤7 / 8-9 / 10 / ≥11
+  const bandCnt = { low: 0, mid: 0, ok: 0, over: 0 };
+  chartTables.forEach(([, n]) => bandCnt[band(n)]++);
+  const H = 150;
+  const maxN = Math.max(12, ...chartTables.map(([, n]) => n));
+  const bars = chartTables
+    .map(([t, n]) => {
+      const h = Math.max(5, Math.round((n / maxN) * H));
+      return `<div class="bar-col" title="Bàn ${esc(t)}: ${n} khách"><div class="bar-num">${n}</div><div class="bar" data-band="${band(n)}" style="height:${h}px"></div><div class="bar-lbl">${esc(t)}</div></div>`;
+    })
+    .join("");
+  const targetBottom = 32 + Math.round((10 / maxN) * H);
+  const summary = `<div class="bar-summary">
+    <span class="pill"><i class="sw" data-band="low"></i>${bandCnt.low} bàn ≤7</span>
+    <span class="pill"><i class="sw" data-band="mid"></i>${bandCnt.mid} bàn 8–9</span>
+    <span class="pill"><i class="sw" data-band="ok"></i>${bandCnt.ok} bàn đủ 10</span>
+    <span class="pill"><i class="sw" data-band="over"></i>${bandCnt.over} bàn ≥11 quá tải</span>
+  </div>`;
+  const legend = `<div class="bar-legend">
+    <span class="lg"><i class="sw" data-band="low"></i>≤ 7 khách</span>
+    <span class="lg"><i class="sw" data-band="mid"></i>8–9 khách</span>
+    <span class="lg"><i class="sw" data-band="ok"></i>Đủ 10 (chuẩn)</span>
+    <span class="lg"><i class="sw" data-band="over"></i>≥ 11 (quá tải)</span>
+  </div>`;
+  const chart = chartTables.length
+    ? `<div class="dash-subhead">📊 Số lượng khách mỗi bàn <span class="dash-note">(không tính khách huỷ · ${chartTables.length} bàn)</span></div>
+       ${summary}${legend}
+       <div class="bar-wrap"><div class="bar-chart" style="--h:${H}px">
+         <div class="target-line" style="bottom:${targetBottom}px"><span>Chuẩn 10</span></div>
+         ${bars}
+       </div></div>`
+    : "";
+
   const rows = tables
     .map(
       ([t, o]) =>
@@ -597,7 +640,7 @@ function renderDashboard() {
     <tbody>${rows}</tbody>
     <tfoot><tr><td>Tổng · ${tables.length} bàn</td><td>${total}</td><td>${ci}</td><td>${cf}</td><td>${veg}</td></tr></tfoot>
   </table></div>`;
-  return `<div class="dashboard">${cards}<div class="dash-subhead">Số lượng khách theo bàn</div>${tbl}</div>`;
+  return `<div class="dashboard">${cards}${chart}<div class="dash-subhead">Bảng chi tiết theo bàn</div>${tbl}</div>`;
 }
 
 function viaLabel(v) {
