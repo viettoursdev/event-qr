@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Check-in khách mời</title>
-    <link rel="stylesheet" href="./checkin.css?v=6" />
+    <link rel="stylesheet" href="./checkin.css?v=7" />
   </head>
   <body>
     <!-- Màn hình đăng nhập -->
@@ -49,6 +49,7 @@
         <div class="topbar-right">
           <span class="station-tag">🖥 <span id="stationTag"></span></span>
           <button id="btnDash" class="btn-ghost" title="Bảng thống kê khách & bàn">📊 Thống kê</button>
+          <button id="btnPrizes" class="btn-ghost" title="Lucky Draw — gán quà trúng thưởng" hidden>🎁 Lucky Draw</button>
           <button id="btnExport" class="btn-ghost" title="Tải file backup danh sách + trạng thái">⬇ Backup</button>
           <button id="btnImport" class="btn-ghost" title="Khôi phục trạng thái check-in/xác nhận từ file backup">⬆ Nhập</button>
           <input id="importFile" type="file" accept=".csv" hidden />
@@ -92,6 +93,6 @@
       <div id="statusbar" class="statusbar" hidden></div>
     </section>
 
-    <script type="module" src="./checkin.js?v=17"></script>
+    <script type="module" src="./checkin.js?v=18"></script>
   </body>
 </html>

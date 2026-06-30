@@ -36,6 +36,9 @@ let page = 0; // trang hiện tại (0-based), mỗi trang 100 khách
 let showAll = false; // hiện toàn bộ danh sách (không phân trang)
 let lastSig = ""; // chữ ký bộ lọc/tìm kiếm gần nhất -> đổi thì về trang đầu
 let showDashboard = false; // bảng thống kê
+let showPrizes = false; // màn Lucky Draw / quà tặng (chỉ Admin)
+let gifts = []; // catalog quà: [{code, sponsor, name, qty, detail, note}]
+let assignFor = ""; // stt khách đang mở bảng chọn quà để gán
 const ADMIN_EMAIL = "checkin.admin@viettours.local";
 const VIEWONLY_EMAIL = "checkin.viewonly@viettours.local";
 let isAdmin = false;
@@ -117,9 +120,24 @@ function makeDemoStore() {
       Object.assign(demoLocks, obj);
       demoLocksCb({ ...demoLocks });
     },
+    subscribeGifts(fn) {
+      demoGiftsCb = fn;
+      fn(demoGifts.slice());
+    },
+    async setGifts(list) {
+      demoGifts = list.slice();
+      demoGiftsCb(demoGifts.slice());
+    },
+    async setPrize(id, prize) {
+      const g = data.find((x) => x.id === id);
+      if (g) g.prize = prize || null;
+      cb(data.slice());
+    },
     async logout() {},
   };
 }
+let demoGifts = [];
+let demoGiftsCb = () => {};
 const demoLocks = { checkin: false, confirm: false, vegetarian: false };
 let demoLocksCb = () => {};
 
@@ -127,7 +145,7 @@ async function makeFirebaseStore() {
   const { initializeApp } = await import(`${SDK}/firebase-app.js`);
   const { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } =
     await import(`${SDK}/firebase-auth.js`);
-  const { getFirestore, collection, onSnapshot, doc, updateDoc, serverTimestamp } = await import(
+  const { getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, serverTimestamp } = await import(
     `${SDK}/firebase-firestore.js`
   );
 
@@ -188,6 +206,16 @@ async function makeFirebaseStore() {
     async setLocks(obj) {
       await updateDoc(doc(db, "event_config", "locks"), obj);
     },
+    // ── Quà tặng / Lucky Draw ──
+    subscribeGifts(fn) {
+      onSnapshot(doc(db, "event_config", "gifts"), (snap) => fn(snap.exists() ? snap.data().list || [] : []));
+    },
+    async setGifts(list) {
+      await setDoc(doc(db, "event_config", "gifts"), { list, updatedAt: serverTimestamp(), updatedBy: station });
+    },
+    async setPrize(id, prize) {
+      await updateDoc(doc(db, collectionName, id), { prize: prize || null });
+    },
     async logout() {
       await signOut(auth);
     },
@@ -247,6 +275,9 @@ function enterApp() {
   if (isAdmin) {
     $("adminBar").hidden = false;
     $("stationTag").textContent = station + " · ADMIN";
+    const bp = $("btnPrizes");
+    if (bp) bp.hidden = false; // nút Lucky Draw chỉ cho Admin
+    if (store.subscribeGifts) store.subscribeGifts(onGifts);
   }
   if (isViewOnly) {
     // Chỉ xem: gắn nhãn + ẩn các nút có thể chỉnh sửa (Nhập backup). Vẫn xem/tìm/lọc/thống kê/tải backup.
@@ -304,9 +335,20 @@ function enterApp() {
   });
   $("btnDash").addEventListener("click", () => {
     showDashboard = !showDashboard;
+    if (showDashboard) showPrizes = false;
     $("btnDash").classList.toggle("active", showDashboard);
+    $("btnPrizes") && $("btnPrizes").classList.remove("active");
     render();
   });
+  const bPr = $("btnPrizes");
+  if (bPr)
+    bPr.addEventListener("click", () => {
+      showPrizes = !showPrizes;
+      if (showPrizes) showDashboard = false;
+      bPr.classList.toggle("active", showPrizes);
+      $("btnDash").classList.remove("active");
+      render();
+    });
   $("btnExport").addEventListener("click", exportBackup);
   $("btnImport").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", (e) => {
@@ -349,6 +391,12 @@ function bindAdminBar() {
   $("lockCheckin").addEventListener("click", tog("checkin"));
   $("lockConfirm").addEventListener("click", tog("confirm"));
   $("lockVeg").addEventListener("click", tog("vegetarian"));
+}
+
+// Catalog quà cập nhật từ Firestore (event_config/gifts)
+function onGifts(arr) {
+  gifts = (arr || []).slice().sort((a, b) => String(a.code || "").localeCompare(String(b.code || ""), "vi", { numeric: true }));
+  if (showPrizes && $("prizeShell")) updatePrizeResults();
 }
 
 // ========================================================
@@ -445,6 +493,14 @@ function render() {
   const box = $("results");
   if (showDashboard) {
     box.innerHTML = renderDashboard();
+    return;
+  }
+  if (showPrizes) {
+    if (!$("prizeShell")) {
+      box.innerHTML = renderPrizeShell();
+      bindPrizeView();
+    }
+    updatePrizeResults();
     return;
   }
   $("fChkDone").classList.toggle("active", checkinFilter === "done");
@@ -875,6 +931,168 @@ async function importBackup(file) {
     try { await store.restore(u.id, u.data); ok++; } catch (_) {}
   }
   flash(`✓ Đã khôi phục ${ok}/${updates.length} khách.`, ok < updates.length);
+}
+
+// ========================================================
+//  🎁 LUCKY DRAW / QUÀ TẶNG  (chỉ Admin)
+// ========================================================
+const giftByCode = (code) => gifts.find((g) => String(g.code) === String(code));
+const assignedCount = (code) => guests.filter((g) => g.prize && String(g.prize.giftCode) === String(code)).length;
+
+function renderPrizeShell() {
+  return `<div id="prizeShell" class="prizes">
+    <div class="prize-top">
+      <button id="btnImportGifts" class="btn-prize-import">📥 Nhập danh sách quà (Excel)</button>
+      <input id="giftFile" type="file" accept=".xlsx,.xls,.csv" hidden />
+      <div id="giftSummary" class="gift-summary"></div>
+    </div>
+    <details class="gift-catalog"><summary>📦 Danh mục quà tặng</summary><div id="giftTableWrap"></div></details>
+    <div class="dash-subhead">🎁 Gán quà trúng thưởng — tìm khách</div>
+    <div class="search-box prize-search">
+      <input id="prizeSearchInput" type="text" inputmode="search" autocomplete="off" placeholder="Tìm khách theo tên / SĐT / công ty…" />
+    </div>
+    <div id="prizeResults" class="prize-results"></div>
+    <div class="dash-subhead">🏆 Danh sách khách trúng thưởng <span id="winnerCount" class="dash-note"></span></div>
+    <div id="prizeWinners"></div>
+  </div>`;
+}
+
+function bindPrizeView() {
+  const imp = $("btnImportGifts");
+  if (imp) imp.addEventListener("click", () => $("giftFile").click());
+  const gf = $("giftFile");
+  if (gf) gf.addEventListener("change", (e) => { const f = e.target.files[0]; if (f) importGifts(f); e.target.value = ""; });
+  const ps = $("prizeSearchInput");
+  if (ps) ps.addEventListener("input", updatePrizeResults);
+}
+
+function updatePrizeResults() {
+  if (!$("prizeShell")) return;
+  const totalQty = gifts.reduce((s, g) => s + (Number(g.qty) || 0), 0);
+  const winners = guests.filter((g) => g.prize);
+  const handed = winners.filter((g) => g.prize.handedOver).length;
+  const used = winners.filter((g) => g.prize.used).length;
+  $("giftSummary").innerHTML =
+    `<span>🎁 <b>${gifts.length}</b> loại</span><span>SL <b>${totalQty}</b></span><span>Đã gán <b>${winners.length}</b></span><span>Bàn giao <b>${handed}</b></span><span>Đã dùng <b>${used}</b></span>`;
+  $("giftTableWrap").innerHTML = gifts.length
+    ? `<div class="dash-tablewrap"><table class="dash-table gift-table"><thead><tr><th>Mã</th><th>Quà</th><th>Nhà tài trợ</th><th>SL</th><th>Gán</th><th>Còn</th></tr></thead><tbody>${gifts
+        .map((g) => { const a = assignedCount(g.code); const rem = (Number(g.qty) || 0) - a; return `<tr><td>${esc(g.code)}</td><td>${esc(g.name)}</td><td>${esc(g.sponsor || "")}</td><td>${esc(g.qty || "")}</td><td>${a}</td><td class="${rem <= 0 ? "rem-zero" : ""}">${isNaN(rem) ? "" : rem}</td></tr>`; })
+        .join("")}</tbody></table></div>`
+    : `<div class="hint-sm">Chưa có quà — bấm "Nhập danh sách quà".</div>`;
+  const q = ($("prizeSearchInput") && $("prizeSearchInput").value) || "";
+  const pr = $("prizeResults");
+  if (!q.trim()) pr.innerHTML = `<div class="hint-sm">Gõ để tìm khách cần gán quà…</div>`;
+  else { const list = search(q).slice(0, 30); pr.innerHTML = list.length ? list.map(prizeGuestRow).join("") : `<div class="hint-sm">Không tìm thấy khách.</div>`; }
+  const w = winners.slice().sort((a, b) => (a.stt || 0) - (b.stt || 0));
+  $("winnerCount").textContent = `(${w.length})`;
+  $("prizeWinners").innerHTML = w.length ? w.map(winnerRow).join("") : `<div class="hint-sm">Chưa có khách nào được gán quà.</div>`;
+  bindPrizeRowActions();
+}
+
+function prizeGuestRow(g) {
+  const sttTag = g.stt != null && g.stt !== "" ? `<span class="stt-tag">STT ${esc(g.stt)}</span> ` : "";
+  const sub = [g.position, g.company].filter(Boolean).map(esc).join(" · ");
+  let action;
+  if (g.prize) action = `<div class="prize-has">🎁 ${esc(g.prize.giftName)} <button class="btn-mini danger" data-unassign="${esc(g.id)}">Gỡ</button></div>`;
+  else if (assignFor === g.id) {
+    const opts = gifts.map((gi) => { const rem = (Number(gi.qty) || 0) - assignedCount(gi.code); return `<option value="${esc(gi.code)}"${rem <= 0 ? " disabled" : ""}>${esc(gi.code)} · ${esc(gi.name)}${isNaN(rem) ? "" : ` (còn ${rem})`}</option>`; }).join("");
+    action = `<div class="assign-box"><select class="gift-select"><option value="">— Chọn quà —</option>${opts}</select><button class="btn-mini ok" data-confirmassign="${esc(g.id)}">Gán</button><button class="btn-mini" data-cancelassign="1">Huỷ</button></div>`;
+  } else action = `<button class="btn-mini ok" data-assign="${esc(g.id)}"${gifts.length ? "" : " disabled"}>🎁 Gán quà</button>`;
+  return `<div class="prize-row"><div class="prize-row-main"><div class="name">${sttTag}${esc(g.name)}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="prize-row-act">${action}</div></div>`;
+}
+
+function winnerRow(g) {
+  const p = g.prize;
+  const sttTag = g.stt != null && g.stt !== "" ? `<span class="stt-tag">STT ${esc(g.stt)}</span> ` : "";
+  return `<div class="winner-card${p.used ? " used" : p.handedOver ? " handed" : ""}">
+    <div class="winner-info"><div class="name">${sttTag}${esc(g.name)}</div>
+      <div class="gift-line">🎁 <b>${esc(p.giftName)}</b>${p.sponsor ? ` · ${esc(p.sponsor)}` : ""} <span class="gcode">[${esc(p.giftCode)}]</span></div>
+      <div class="winner-status">${p.handedOver ? `<span class="badge handed-yes">✓ Đã bàn giao${p.handedOverAt ? " · " + fmtTime(p.handedOverAt) : ""}</span>` : `<span class="badge handed-no">Chưa bàn giao</span>`}${p.used ? ` <span class="badge used-yes">✓ Đã sử dụng${p.usedAt ? " · " + fmtTime(p.usedAt) : ""}</span>` : ""}</div>
+    </div>
+    <div class="winner-act">
+      <button class="btn-hand${p.handedOver ? " on" : ""}" data-hand="${esc(g.id)}">${p.handedOver ? "Bỏ bàn giao" : "Bàn giao voucher"}</button>
+      <button class="btn-use${p.used ? " on" : ""}" data-use="${esc(g.id)}"${p.handedOver ? "" : " disabled"}>${p.used ? "Bỏ đã dùng" : "Đã sử dụng"}</button>
+      <button class="btn-mini danger" data-unassign="${esc(g.id)}">Gỡ</button>
+    </div>
+  </div>`;
+}
+
+function bindPrizeRowActions() {
+  const root = $("prizeShell");
+  if (!root) return;
+  root.querySelectorAll("[data-assign]").forEach((b) => b.addEventListener("click", () => { assignFor = b.getAttribute("data-assign"); updatePrizeResults(); }));
+  root.querySelectorAll("[data-cancelassign]").forEach((b) => b.addEventListener("click", () => { assignFor = ""; updatePrizeResults(); }));
+  root.querySelectorAll("[data-confirmassign]").forEach((b) => b.addEventListener("click", () => confirmAssign(b.getAttribute("data-confirmassign"))));
+  root.querySelectorAll("[data-unassign]").forEach((b) => b.addEventListener("click", () => unassignPrize(b.getAttribute("data-unassign"))));
+  root.querySelectorAll("[data-hand]").forEach((b) => b.addEventListener("click", () => togglePrizeFlag(b.getAttribute("data-hand"), "handedOver")));
+  root.querySelectorAll("[data-use]").forEach((b) => b.addEventListener("click", () => togglePrizeFlag(b.getAttribute("data-use"), "used")));
+}
+
+async function confirmAssign(id) {
+  const sel = $("prizeShell").querySelector(".gift-select");
+  const code = sel ? sel.value : "";
+  if (!code) return flash("Chọn 1 phần quà.", true);
+  const gift = giftByCode(code);
+  if (!gift) return flash("Quà không hợp lệ.", true);
+  const prize = { giftCode: gift.code, giftName: gift.name, sponsor: gift.sponsor || "", assignedAt: new Date().toISOString(), assignedBy: station, handedOver: false, used: false };
+  try { await store.setPrize(id, prize); assignFor = ""; const g = guests.find((x) => x.id === id); flash(`🎁 Đã gán "${gift.name}" cho ${g ? g.name : id}`); }
+  catch (e) { flash("Lỗi khi gán quà: " + (e.code || e.message), true); }
+}
+
+async function unassignPrize(id) {
+  const g = guests.find((x) => x.id === id);
+  if (!confirm(`Gỡ phần quà của ${g ? g.name : ""}?`)) return;
+  try { await store.setPrize(id, null); flash("Đã gỡ quà."); }
+  catch (e) { flash("Lỗi: " + (e.code || e.message), true); }
+}
+
+async function togglePrizeFlag(id, flag) {
+  const g = guests.find((x) => x.id === id);
+  if (!g || !g.prize) return;
+  const on = !g.prize[flag];
+  if (flag === "used" && on && !g.prize.handedOver) return flash("Cần bàn giao voucher trước.", true);
+  const prize = { ...g.prize, [flag]: on, [`${flag}At`]: on ? new Date().toISOString() : null, [`${flag}By`]: on ? station : null };
+  try { await store.setPrize(id, prize); }
+  catch (e) { flash("Lỗi: " + (e.code || e.message), true); }
+}
+
+// Nhập danh sách quà từ Excel (.xlsx/.xls) hoặc CSV
+async function importGifts(file) {
+  try {
+    let rows;
+    if (/\.csv$/i.test(file.name)) rows = parseCSV(await file.text());
+    else {
+      const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
+    }
+    if (!rows || rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
+    const nm = (s) => norm(String(s));
+    let hi = rows.findIndex((r) => Array.isArray(r) && r.some((c) => /ma so|ma qua/.test(nm(c))));
+    if (hi < 0) hi = 0;
+    const H = rows[hi].map(nm);
+    const col = (...keys) => H.findIndex((h) => keys.some((k) => h.includes(k)));
+    const ic = col("ma so", "ma qua", "code"), isp = col("nha tai tro", "tai tro", "sponsor"),
+      inm = col("ten qua", "ten phan qua", "gift", "ten qua tang"), iq = col("so luong", "qty"),
+      idt = col("noi dung", "chi tiet", "detail"), ign = col("ghi chu", "note");
+    if (inm < 0) return flash("Không thấy cột 'Tên quà tài trợ' trong file.", true);
+    const list = [], seen = new Set();
+    for (const r of rows.slice(hi + 1)) {
+      const name = String(r[inm] || "").trim();
+      let code = ic >= 0 ? String(r[ic] || "").trim() : "";
+      if (!name && !code) continue;
+      if (!code) code = "Q" + (list.length + 1);
+      if (seen.has(code)) code = code + "-" + (list.length + 1);
+      seen.add(code);
+      list.push({ code, name, sponsor: isp >= 0 ? String(r[isp] || "").trim() : "", qty: iq >= 0 ? String(r[iq] || "").trim() : "", detail: idt >= 0 ? String(r[idt] || "").trim() : "", note: ign >= 0 ? String(r[ign] || "").trim() : "" });
+    }
+    if (!list.length) return flash("Không đọc được phần quà nào.", true);
+    if (!confirm(`Nạp ${list.length} phần quà? (Thay thế danh mục quà hiện tại — KHÔNG ảnh hưởng quà đã gán cho khách)`)) return;
+    await store.setGifts(list);
+    flash(`✅ Đã nạp ${list.length} phần quà.`);
+  } catch (e) {
+    flash("Lỗi đọc file: " + (e.message || e), true);
+  }
 }
 
 init();
