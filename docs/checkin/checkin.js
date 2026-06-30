@@ -975,8 +975,8 @@ function updatePrizeResults() {
   $("giftSummary").innerHTML =
     `<span>🎁 <b>${gifts.length}</b> loại</span><span>SL <b>${totalQty}</b></span><span>Đã gán <b>${winners.length}</b></span><span>Bàn giao <b>${handed}</b></span><span>Đã dùng <b>${used}</b></span>`;
   $("giftTableWrap").innerHTML = gifts.length
-    ? `<div class="dash-tablewrap"><table class="dash-table gift-table"><thead><tr><th>Mã</th><th>Quà</th><th>Nhà tài trợ</th><th>SL</th><th>Gán</th><th>Còn</th></tr></thead><tbody>${gifts
-        .map((g) => { const a = assignedCount(g.code); const rem = (Number(g.qty) || 0) - a; return `<tr><td>${esc(g.code)}</td><td>${esc(g.name)}</td><td>${esc(g.sponsor || "")}</td><td>${esc(g.qty || "")}</td><td>${a}</td><td class="${rem <= 0 ? "rem-zero" : ""}">${isNaN(rem) ? "" : rem}</td></tr>`; })
+    ? `<div class="dash-tablewrap"><table class="dash-table gift-table"><thead><tr><th>Mã</th><th>Hạng</th><th>Quà</th><th>Nhà tài trợ</th><th>SL</th><th>Gán</th><th>Còn</th></tr></thead><tbody>${gifts
+        .map((g) => { const a = assignedCount(g.code); const rem = (Number(g.qty) || 0) - a; return `<tr><td>${esc(g.code)}</td><td>${g.tier ? `<span class="tier-tag">${esc(g.tier)}</span>` : ""}</td><td>${esc(g.name)}</td><td>${esc(g.sponsor || "")}</td><td>${esc(g.qty || "")}</td><td>${a}</td><td class="${rem <= 0 ? "rem-zero" : ""}">${isNaN(rem) ? "" : rem}</td></tr>`; })
         .join("")}</tbody></table></div>`
     : `<div class="hint-sm">Chưa có quà — bấm "Nhập danh sách quà".</div>`;
   const q = ($("prizeSearchInput") && $("prizeSearchInput").value) || "";
@@ -995,7 +995,7 @@ function prizeGuestRow(g) {
   let action;
   if (g.prize) action = `<div class="prize-has">🎁 ${esc(g.prize.giftName)} <button class="btn-mini danger" data-unassign="${esc(g.id)}">Gỡ</button></div>`;
   else if (assignFor === g.id) {
-    const opts = gifts.map((gi) => { const rem = (Number(gi.qty) || 0) - assignedCount(gi.code); return `<option value="${esc(gi.code)}"${rem <= 0 ? " disabled" : ""}>${esc(gi.code)} · ${esc(gi.name)}${isNaN(rem) ? "" : ` (còn ${rem})`}</option>`; }).join("");
+    const opts = gifts.map((gi) => { const rem = (Number(gi.qty) || 0) - assignedCount(gi.code); return `<option value="${esc(gi.code)}"${rem <= 0 ? " disabled" : ""}>${esc(gi.code)}${gi.tier ? ` [${esc(gi.tier)}]` : ""} · ${esc(gi.name)}${isNaN(rem) ? "" : ` (còn ${rem})`}</option>`; }).join("");
     action = `<div class="assign-box"><select class="gift-select"><option value="">— Chọn quà —</option>${opts}</select><button class="btn-mini ok" data-confirmassign="${esc(g.id)}">Gán</button><button class="btn-mini" data-cancelassign="1">Huỷ</button></div>`;
   } else action = `<button class="btn-mini ok" data-assign="${esc(g.id)}"${gifts.length ? "" : " disabled"}>🎁 Gán quà</button>`;
   return `<div class="prize-row"><div class="prize-row-main"><div class="name">${sttTag}${esc(g.name)}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="prize-row-act">${action}</div></div>`;
@@ -1006,7 +1006,7 @@ function winnerRow(g) {
   const sttTag = g.stt != null && g.stt !== "" ? `<span class="stt-tag">STT ${esc(g.stt)}</span> ` : "";
   return `<div class="winner-card${p.used ? " used" : p.handedOver ? " handed" : ""}">
     <div class="winner-info"><div class="name">${sttTag}${esc(g.name)}</div>
-      <div class="gift-line">🎁 <b>${esc(p.giftName)}</b>${p.sponsor ? ` · ${esc(p.sponsor)}` : ""} <span class="gcode">[${esc(p.giftCode)}]</span></div>
+      <div class="gift-line">${p.tier ? `<span class="tier-tag">${esc(p.tier)}</span> ` : ""}🎁 <b>${esc(p.giftName)}</b>${p.sponsor ? ` · ${esc(p.sponsor)}` : ""} <span class="gcode">[${esc(p.giftCode)}]</span></div>
       <div class="winner-status">${p.handedOver ? `<span class="badge handed-yes">✓ Đã bàn giao${p.handedOverAt ? " · " + fmtTime(p.handedOverAt) : ""}</span>` : `<span class="badge handed-no">Chưa bàn giao</span>`}${p.used ? ` <span class="badge used-yes">✓ Đã sử dụng${p.usedAt ? " · " + fmtTime(p.usedAt) : ""}</span>` : ""}</div>
     </div>
     <div class="winner-act">
@@ -1034,7 +1034,7 @@ async function confirmAssign(id) {
   if (!code) return flash("Chọn 1 phần quà.", true);
   const gift = giftByCode(code);
   if (!gift) return flash("Quà không hợp lệ.", true);
-  const prize = { giftCode: gift.code, giftName: gift.name, sponsor: gift.sponsor || "", assignedAt: new Date().toISOString(), assignedBy: station, handedOver: false, used: false };
+  const prize = { giftCode: gift.code, giftName: gift.name, sponsor: gift.sponsor || "", tier: gift.tier || "", assignedAt: new Date().toISOString(), assignedBy: station, handedOver: false, used: false };
   try { await store.setPrize(id, prize); assignFor = ""; const g = guests.find((x) => x.id === id); flash(`🎁 Đã gán "${gift.name}" cho ${g ? g.name : id}`); }
   catch (e) { flash("Lỗi khi gán quà: " + (e.code || e.message), true); }
 }
@@ -1066,25 +1066,53 @@ async function importGifts(file) {
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
       rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
     }
-    if (!rows || rows.length < 2) return flash("File rỗng hoặc sai định dạng.", true);
+    if (!rows || !rows.length) return flash("File rỗng hoặc sai định dạng.", true);
     const nm = (s) => norm(String(s));
-    let hi = rows.findIndex((r) => Array.isArray(r) && r.some((c) => /ma so|ma qua/.test(nm(c))));
-    if (hi < 0) hi = 0;
-    const H = rows[hi].map(nm);
-    const col = (...keys) => H.findIndex((h) => keys.some((k) => h.includes(k)));
-    const ic = col("ma so", "ma qua", "code"), isp = col("nha tai tro", "tai tro", "sponsor"),
-      inm = col("ten qua", "ten phan qua", "gift", "ten qua tang"), iq = col("so luong", "qty"),
-      idt = col("noi dung", "chi tiet", "detail"), ign = col("ghi chu", "note");
-    if (inm < 0) return flash("Không thấy cột 'Tên quà tài trợ' trong file.", true);
+    // Có dòng tiêu đề không? Tránh nhầm: chỉ tính là header khi khớp ≥2 nhóm từ khoá khác nhau
+    // (1 ô dữ liệu chứa chữ "số lượng" trong câu sẽ không bị nhận nhầm).
+    const hdrScore = (r) => {
+      if (!Array.isArray(r)) return 0;
+      const cells = r.map(nm);
+      let s = 0;
+      if (cells.some((c) => /ma so|ma qua/.test(c))) s++;
+      if (cells.some((c) => /ten qua|ten phan qua/.test(c))) s++;
+      if (cells.some((c) => /nha tai tro|tai tro/.test(c))) s++;
+      if (cells.some((c) => /so luong/.test(c))) s++;
+      return s;
+    };
+    const hi = rows.findIndex((r) => hdrScore(r) >= 2);
+    let ic, isp, inm, iq, idt, itier, ign, start;
+    if (hi >= 0) {
+      const H = rows[hi].map(nm);
+      const col = (...keys) => H.findIndex((h) => keys.some((k) => h.includes(k)));
+      ic = col("ma so", "ma qua", "code"); isp = col("nha tai tro", "tai tro", "sponsor");
+      inm = col("ten qua", "ten phan qua", "gift", "ten qua tang"); iq = col("so luong", "qty");
+      idt = col("noi dung", "chi tiet", "detail"); itier = col("hang giai", "hang", "giai", "tier"); ign = col("ghi chu", "note");
+      start = hi + 1;
+      if (inm < 0) return flash("File có tiêu đề nhưng không thấy cột 'Tên quà tài trợ'.", true);
+    } else {
+      // KHÔNG header → cột cố định: A=mã, B=nhà tài trợ, C=tên quà, D=SL, E=nội dung, F=hạng giải, G=ghi chú
+      ic = 0; isp = 1; inm = 2; iq = 3; idt = 4; itier = 5; ign = 6; start = 0;
+    }
     const list = [], seen = new Set();
-    for (const r of rows.slice(hi + 1)) {
+    let lastCode = "";
+    for (const r of rows.slice(start)) {
+      if (!Array.isArray(r)) continue;
       const name = String(r[inm] || "").trim();
-      let code = ic >= 0 ? String(r[ic] || "").trim() : "";
-      if (!name && !code) continue;
-      if (!code) code = "Q" + (list.length + 1);
-      if (seen.has(code)) code = code + "-" + (list.length + 1);
+      const raw = ic >= 0 ? String(r[ic] || "").trim() : "";
+      if (raw) lastCode = raw;
+      if (!name && !raw) continue; // dòng trống hẳn -> bỏ
+      let code = raw || lastCode || "Q" + (list.length + 1);
+      if (seen.has(code)) { let k = 2; while (seen.has(code + "-" + k)) k++; code = code + "-" + k; } // mã trùng -> hậu tố
       seen.add(code);
-      list.push({ code, name, sponsor: isp >= 0 ? String(r[isp] || "").trim() : "", qty: iq >= 0 ? String(r[iq] || "").trim() : "", detail: idt >= 0 ? String(r[idt] || "").trim() : "", note: ign >= 0 ? String(r[ign] || "").trim() : "" });
+      list.push({
+        code, name,
+        sponsor: isp >= 0 ? String(r[isp] || "").trim() : "",
+        qty: iq >= 0 ? String(r[iq] || "").trim() : "",
+        detail: idt >= 0 ? String(r[idt] || "").trim() : "",
+        tier: itier >= 0 ? String(r[itier] || "").trim() : "",
+        note: ign >= 0 ? String(r[ign] || "").trim() : "",
+      });
     }
     if (!list.length) return flash("Không đọc được phần quà nào.", true);
     if (!confirm(`Nạp ${list.length} phần quà? (Thay thế danh mục quà hiện tại — KHÔNG ảnh hưởng quà đã gán cho khách)`)) return;
