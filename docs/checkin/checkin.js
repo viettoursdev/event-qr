@@ -278,6 +278,8 @@ function enterApp() {
     const bp = $("btnPrizes");
     if (bp) bp.hidden = false; // nút Lucky Draw chỉ cho Admin
     if (store.subscribeGifts) store.subscribeGifts(onGifts);
+    const bx = $("btnExportXlsx");
+    if (bx) { bx.hidden = false; bx.addEventListener("click", exportFilteredExcel); } // Xuất Excel chỉ cho Admin
   }
   if (isViewOnly) {
     // Chỉ xem: gắn nhãn + ẩn các nút có thể chỉnh sửa (Nhập backup). Vẫn xem/tìm/lọc/thống kê/tải backup.
@@ -1120,6 +1122,70 @@ async function importGifts(file) {
     flash(`✅ Đã nạp ${list.length} phần quà.`);
   } catch (e) {
     flash("Lỗi đọc file: " + (e.message || e), true);
+  }
+}
+
+// ========================================================
+//  📤 XUẤT EXCEL theo bộ lọc đang chọn (chỉ Admin)
+// ========================================================
+// Danh sách khách khớp bộ lọc + tìm kiếm hiện tại (giống render, không phân trang).
+function currentFilteredList() {
+  const q = $("search") ? $("search").value : "";
+  const qStt = $("searchStt") ? $("searchStt").value.trim() : "";
+  const hasQ = !!q.trim(), hasStt = !!qStt;
+  let list;
+  if (hasQ || hasStt) {
+    list = hasQ ? search(q) : guests.slice();
+    if (hasStt) list = list.filter((g) => sttMatch(g, qStt));
+  } else list = guests.slice();
+  if (checkinFilter) list = list.filter((g) => (checkinFilter === "done" ? g.checkedIn : !g.checkedIn));
+  if (confirmFilter) list = list.filter((g) => (confirmFilter === "done" ? g.confirmed : !g.confirmed));
+  if (vegFilter) list = list.filter((g) => g.vegetarian);
+  if (cancelFilter) list = list.filter((g) => g.cancelled);
+  if (tableFilter) list = list.filter((g) => String(g.table == null ? "" : g.table).trim() === tableFilter);
+  return list.slice().sort((a, b) => (a.stt || 0) - (b.stt || 0));
+}
+
+async function exportFilteredExcel() {
+  if (!isAdmin) return flash("Chỉ Admin được xuất danh sách.", true);
+  const list = currentFilteredList();
+  if (!list.length) return flash("Không có khách nào khớp bộ lọc để xuất.", true);
+  const fl = [];
+  if (checkinFilter) fl.push(checkinFilter === "done" ? "đã check-in" : "chưa check-in");
+  if (confirmFilter) fl.push(confirmFilter === "done" ? "đã xác nhận" : "chưa xác nhận");
+  if (vegFilter) fl.push("ăn chay");
+  if (cancelFilter) fl.push("xác nhận huỷ");
+  if (tableFilter) fl.push("bàn " + tableFilter);
+  const q = ($("search") && $("search").value.trim()) || "";
+  const qStt = ($("searchStt") && $("searchStt").value.trim()) || "";
+  if (q) fl.push("tìm “" + q + "”");
+  if (qStt) fl.push("STT “" + qStt + "”");
+  const flabel = fl.length ? fl.join(" · ") : "tất cả";
+  try {
+    const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
+    const header = ["STT", "Danh xưng", "Tên khách mời", "Chức vụ", "Đơn vị", "Số bàn", "SĐT",
+      "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "Ăn chay", "Xác nhận huỷ",
+      "Quà trúng", "Hạng giải", "Đã bàn giao", "Đã sử dụng"];
+    const yn = (b) => (b ? "Có" : "");
+    const rows = list.map((g) => [
+      g.stt || "", g.title || "", g.name || "", (g.position || "").replace(/\s+/g, " "), (g.company || "").replace(/\s+/g, " "),
+      g.table || "", g.phone || "",
+      yn(g.checkedIn), g.checkedIn ? fmtTime(g.checkinAt) || "" : "", g.checkinBy || "",
+      yn(g.confirmed), yn(g.vegetarian), yn(g.cancelled),
+      g.prize ? g.prize.giftName || "" : "", g.prize ? g.prize.tier || "" : "",
+      g.prize && g.prize.handedOver ? "Có" : "", g.prize && g.prize.used ? "Có" : "",
+    ]);
+    const aoa = [[eventName + " — Danh sách check-in"], [`Lọc: ${flabel}`, "", "", `Xuất: ${new Date().toLocaleString("vi-VN")}`, "", `Tổng: ${list.length} khách`], [], header, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [6, 10, 26, 28, 28, 9, 14, 10, 11, 8, 10, 7, 11, 22, 10, 10, 10].map((w) => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sach");
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", " ").replace(/:/g, "");
+    const fname = `Danh sach check-in - ${flabel} - ${stamp}.xlsx`.replace(/[\/\\:*?"<>|]/g, " ");
+    XLSX.writeFile(wb, fname);
+    flash(`✅ Đã xuất ${list.length} khách ra Excel.`);
+  } catch (e) {
+    flash("Lỗi xuất Excel: " + (e.message || e), true);
   }
 }
 
