@@ -1162,27 +1162,82 @@ async function exportFilteredExcel() {
   if (qStt) fl.push("STT “" + qStt + "”");
   const flabel = fl.length ? fl.join(" · ") : "tất cả";
   try {
-    const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
-    const header = ["STT", "Danh xưng", "Tên khách mời", "Chức vụ", "Đơn vị", "Số bàn", "SĐT",
-      "Đã check-in", "Giờ check-in", "Quầy", "Đã xác nhận", "Ăn chay", "Xác nhận huỷ",
-      "Quà trúng", "Hạng giải", "Đã bàn giao", "Đã sử dụng"];
+    flash("Đang tạo file Excel…");
+    const mod = await import("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm");
+    const ExcelJS = mod.default || mod;
+    // ── Bảng màu Viettours (teal) ──
+    const TEAL = "FF0C7C80", TEAL_DEEP = "FF07484B", TEAL_TINT = "FFE9F6F6", LINE = "FFBFDCDC", RED = "FFC0392B", GREEN = "FF0F9D6E";
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Viettours Event"; wb.created = new Date();
+    const ws = wb.addWorksheet("Danh sách", { views: [{ state: "frozen", ySplit: 4 }], properties: { defaultRowHeight: 18 } });
+
+    const cols = [
+      { h: "STT", w: 7 }, { h: "Danh xưng", w: 11 }, { h: "Tên khách mời", w: 28 }, { h: "Chức vụ", w: 30 },
+      { h: "Đơn vị", w: 30 }, { h: "Số bàn", w: 11 }, { h: "SĐT", w: 15 }, { h: "Đã check-in", w: 12 },
+      { h: "Giờ check-in", w: 12 }, { h: "Quầy", w: 10 }, { h: "Đã xác nhận", w: 12 }, { h: "Ăn chay", w: 9 },
+      { h: "Xác nhận huỷ", w: 12 }, { h: "Quà trúng", w: 24 }, { h: "Hạng giải", w: 11 }, { h: "Đã bàn giao", w: 12 }, { h: "Đã sử dụng", w: 11 },
+    ];
+    const N = cols.length;
+    ws.columns = cols.map((c) => ({ width: c.w }));
+    const colLetter = (n) => { let s = ""; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s; };
+    const last = colLetter(N);
+
+    // Hàng 1: tiêu đề
+    ws.mergeCells(`A1:${last}1`);
+    const t = ws.getCell("A1");
+    t.value = eventName.toUpperCase() + " — DANH SÁCH CHECK-IN";
+    t.font = { bold: true, size: 15, color: { argb: "FFFFFFFF" } };
+    t.alignment = { vertical: "middle", horizontal: "center" };
+    t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL_DEEP } };
+    ws.getRow(1).height = 30;
+    // Hàng 2: thông tin lọc
+    ws.mergeCells(`A2:${last}2`);
+    const s2 = ws.getCell("A2");
+    s2.value = `Bộ lọc: ${flabel}     •     Tổng: ${list.length} khách     •     Xuất: ${new Date().toLocaleString("vi-VN")}`;
+    s2.font = { italic: true, size: 10.5, color: { argb: "FF07484B" } };
+    s2.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+    s2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL_TINT } };
+    ws.getRow(2).height = 20;
+    ws.addRow([]); // hàng 3 để trống mỏng
+    ws.getRow(3).height = 6;
+
+    // Hàng 4: header
+    const hr = ws.addRow(cols.map((c) => c.h));
+    hr.height = 22;
+    hr.eachCell((cell) => {
+      cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = { top: { style: "thin", color: { argb: LINE } }, bottom: { style: "thin", color: { argb: LINE } }, left: { style: "thin", color: { argb: LINE } }, right: { style: "thin", color: { argb: LINE } } };
+    });
+
     const yn = (b) => (b ? "Có" : "");
-    const rows = list.map((g) => [
-      g.stt || "", g.title || "", g.name || "", (g.position || "").replace(/\s+/g, " "), (g.company || "").replace(/\s+/g, " "),
-      g.table || "", g.phone || "",
-      yn(g.checkedIn), g.checkedIn ? fmtTime(g.checkinAt) || "" : "", g.checkinBy || "",
-      yn(g.confirmed), yn(g.vegetarian), yn(g.cancelled),
-      g.prize ? g.prize.giftName || "" : "", g.prize ? g.prize.tier || "" : "",
-      g.prize && g.prize.handedOver ? "Có" : "", g.prize && g.prize.used ? "Có" : "",
-    ]);
-    const aoa = [[eventName + " — Danh sách check-in"], [`Lọc: ${flabel}`, "", "", `Xuất: ${new Date().toLocaleString("vi-VN")}`, "", `Tổng: ${list.length} khách`], [], header, ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [6, 10, 26, 28, 28, 9, 14, 10, 11, 8, 10, 7, 11, 22, 10, 10, 10].map((w) => ({ wch: w }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Danh sach");
+    list.forEach((g, i) => {
+      const p = g.prize || null;
+      const r = ws.addRow([
+        g.stt || "", g.title || "", g.name || "", (g.position || "").replace(/\s+/g, " "), (g.company || "").replace(/\s+/g, " "),
+        g.table || "", g.phone || "", yn(g.checkedIn), g.checkedIn ? fmtTime(g.checkinAt) || "" : "", g.checkinBy || "",
+        yn(g.confirmed), yn(g.vegetarian), yn(g.cancelled), p ? p.giftName || "" : "", p ? p.tier || "" : "",
+        p && p.handedOver ? "Có" : "", p && p.used ? "Có" : "",
+      ]);
+      const zebra = i % 2 === 1;
+      r.eachCell((cell, col) => {
+        cell.border = { top: { style: "hair", color: { argb: LINE } }, bottom: { style: "hair", color: { argb: LINE } }, left: { style: "hair", color: { argb: LINE } }, right: { style: "hair", color: { argb: LINE } } };
+        cell.alignment = { vertical: "middle", horizontal: col === 3 || col === 4 || col === 5 || col === 14 ? "left" : "center", wrapText: false };
+        if (zebra) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL_TINT } };
+      });
+      if (g.checkedIn) r.getCell(8).font = { color: { argb: GREEN }, bold: true };
+      if (g.cancelled) r.getCell(13).font = { color: { argb: RED }, bold: true };
+    });
+    ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: N } };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const stamp = new Date().toISOString().slice(0, 16).replace("T", " ").replace(/:/g, "");
     const fname = `Danh sach check-in - ${flabel} - ${stamp}.xlsx`.replace(/[\/\\:*?"<>|]/g, " ");
-    XLSX.writeFile(wb, fname);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
     flash(`✅ Đã xuất ${list.length} khách ra Excel.`);
   } catch (e) {
     flash("Lỗi xuất Excel: " + (e.message || e), true);
